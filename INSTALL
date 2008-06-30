@@ -1,0 +1,95 @@
+			GIFLIB INSTALLATION AND TESTING
+
+You will need an ANSI C compiler to use this source code.
+
+The gif_lib library and utilities have been successfully compiled on the
+following platforms:
+
+1. IBM-PC, using Turbo C version 2.0/Borland C++ 2.0.
+2. Sun 3, with O.S. 3.5 and O.S. 4.0.3, using gcc (gnu c compiler).
+3. Sun 4, with O.S. 4.1.1, using gcc (gnu c compiler).
+4. HP workstations, running unix BSD4.3, using gcc (gnu c compiler).
+5. SGI personal iris (iris4d) running IRIX 4.3, using its cc.
+6. IBM R6000 running aix, using xlc (Ansi C compiler).
+7. AT&T WGS6386 under System V Release 3.2
+8. Swan 486DB under System V Release 4.0
+
+The first one (IBM-PC) was the main target of the 1.x versions of this package.
+The 2.0 code was extensively hacked on a UNIX machine.  We've tried to preserve
+MS-DOS portability, but the 2.0 code was not tested under DOS before release.
+
+IBM-PC installation and testing differs from the UNIX procedure, and is
+described in a separate section below.
+
+See the package READ.ME for more information on GIFLIB's capabilities.
+
+Note: we don't use configure because we're trying to preserve the ability
+to build for DOS.
+
+Compile and test - UNIX
+-----------------------
+
+1. Go to the lib and util directories and tweak the C compiler and linker
+   flags therein for your system.
+
+2. Type `make' in the top-level directory.
+
+3. Test the package by adding ./util to your path and firing the 'test-unx'
+   script.  This assumes the display is X11, and the environment variable
+   DISPLAY is set properly - it uses gif2X11 as the display utility.
+
+Compile and test - IBM PC
+-------------------------
+
+O.K., if you have TC/BC you are in good shape (otherwise you are on your own)
+and compilation will be simple:
+
+1. Goto to the makefiles in .\lib and .\util (called makefile.tc in both
+   places) and change the variable CC_LIBS to the exact place you have your
+   cc libraries. I use to put them in ram disk (disk f:) for fast access.
+   Make sure this is short variable or otherwise dos will complain about
+   lines too long (the stupid 128 chars per line), in linkage...
+
+2. Few of the utilities on .\util needs the TC graphic libraries (the gif2xxxx
+   utilities). You need to create a library named graphbgi.lib that holds all
+   the BGI drivers and CHR fonts. You do so by a sequence similar to:
+
+   a. bgiobj herc       (bgiobj.exe is on one of your TC 2.0 diskettes).
+   b. bgiobj egavga
+   c. bgiobj cga
+   d. bgiobj ibm8514
+   e. bgiobj pc3270
+   f. bgiobj goth
+   g. bgiobj litt
+   h. bgiobj sans
+   i. bgiobj trip
+
+     This will convert all this drivers/fonts into .OBJ files, which can be all
+   linked to creat the library:
+
+   tlib graphbgi.lib +herc.obj +egavga.obj ... +trip.obj, graphbgi.lst
+
+     Copy this library to the same directory as specified by CC_LIBS in 1.
+
+3. Decide what directory you want the executables to br copied to and create
+   it if it is new. Goto .\util and set the DEST variable in the makefile 
+   (makefile.tc) to that directory.
+
+4. Fire the compilation by executing make-ibm.bat
+
+
+To test most of the utilities reconfigure test-ibm.bat as follows:
+1. make sure the new exectuables directory is in your path variable.
+2. The default display program is gif2bgi (in this package). If may want
+   to change its setup. See ./doc/gif2bgi.doc for more.
+3. Set the GIF_DIR variable in the batch file to the absolute path of
+   ./pic directory (hold some gif examples).
+
+Run test-ibm.bat. You will want to print gif2bgi.doc in ./doc so you will
+know how to use it (at list how to exit...).
+
+						Eric S. Raymond
+						esr@snark.thyrsus.com
+
+						Gershon Elber
+						gershon@cs.utah.edu
