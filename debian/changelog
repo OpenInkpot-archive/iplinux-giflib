@@ -1,3 +1,15 @@
+giflib (4.1.6-1) unstable; urgency=low
+
+  * New upstream release.
+  * Bumped package to new policy.
+  * Using new homepage field in control.
+  * Don't hide make errors in clean target of rules.
+  * Added --fail-missing to dh_install call.
+  * Updated conficts/replaces/provides to initiate libungif4 to libgif4
+    transition.
+
+ -- Daniel Baumann <daniel@debian.org>  Thu, 17 Jan 2008 18:34:00 +0100
+
 giflib (4.1.4-2) unstable; urgency=low
 
   * Minor cleanups.

@@ -1,9 +1,13 @@
 This package was debianized by Daniel Baumann <daniel@debian.org> on
 Thu,  2 Nov 2006 20:39:00 +0100.
 
-It was downloaded from <http://libungif.sourceforge.net/>.
+It was downloaded from:
 
-Upstream Author: Toshio Kuratomi <toshio@tiki-lounge.com>
+	<http://libungif.sourceforge.net/>
+
+Upstream Author:
+
+	Toshio Kuratomi <toshio@tiki-lounge.com>
 
 License:
 
@@ -28,5 +32,5 @@ License:
 	TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-The Debian packaging is (C) 2006-2007, Daniel Baumann <daniel@debian.org> and
-is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
+The Debian packaging is (C) 2006-2008, Daniel Baumann <daniel@debian.org> and
+is licensed under the GPL, see /usr/share/common-licenses/GPL-2.
