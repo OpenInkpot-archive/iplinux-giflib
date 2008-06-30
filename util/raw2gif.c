@@ -14,6 +14,10 @@
 * 15 Oct 89 - Version 1.0 by Gershon Elber.				     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <dos.h>
 #include <alloc.h>
@@ -22,10 +26,18 @@
 #include <io.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#include "gagetarg.h"
+#endif /* HAVE_FCNTL_H */
+#include "getarg.h"
 #include "gif_lib.h"
 
 #define PROGRAM_NAME	"Raw2Gif"
@@ -82,7 +94,7 @@ static int HandleGifError(GifFileType *GifFile);
 /******************************************************************************
 * Interpret the command line, prepar global data and call the Gif routines.   *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	Error, NumFiles, ImageWidth, ImageHeight, Dummy, Red, Green, Blue,
 	ColorMapSize, InFileHandle,
@@ -102,24 +114,24 @@ void main(int argc, char **argv)
 	else if (NumFiles > 1)
 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     if (ColorMapFlag) {
 	/* Read color map from given file: */
 	if ((InColorMapFile = fopen(ColorMapFile, "rt")) == NULL) {
 	    GIF_MESSAGE("Failed to open COLOR MAP file (not exists!?).");
-	    exit(2);
+	    exit(EXIT_FAILURE);
 	}
 	if ((ColorMap = MakeMapObject(256, NULL)) == NULL) {
 	    GIF_MESSAGE("Failed to allocate bitmap, aborted.");
-	    exit(3);
+	    exit(EXIT_FAILURE);
 	}
 
 	for (ColorMapSize = 0;
@@ -143,7 +155,7 @@ void main(int argc, char **argv)
 	if ((InFileHandle = open(*FileName, O_RDONLY)) == -1) {
 #endif /* __MSDOS__ */
 	    GIF_MESSAGE("Failed to open RAW image file (not exists!?).");
-	    exit(2);
+	    exit(EXIT_FAILURE);
 	}
 	dup2(InFileHandle, 0);		       /* Make stdin from this file. */
     }
@@ -159,6 +171,8 @@ void main(int argc, char **argv)
 
     /* Conver Raw image from stdin to Gif file in stdout: */
     Raw2Gif(ImageWidth, ImageHeight, ColorMap);
+
+    return 0;
 }
 
 /******************************************************************************
@@ -175,7 +189,7 @@ int Raw2Gif(int ImageWidth, int ImageHeight, ColorMapObject *ColorMap)
     if ((ScanLine = (GifPixelType *) malloc(sizeof(GifPixelType) * ImageWidth))
 								== NULL) {
 	GIF_MESSAGE("Failed to allocate scan line, aborted.");
-	exit(3);
+	exit(EXIT_FAILURE);
     }
 
     if ((GifFile = EGifOpenFileHandle(1)) == NULL) {	   /* Gif to stdout. */
@@ -203,7 +217,7 @@ int Raw2Gif(int ImageWidth, int ImageHeight, ColorMapObject *ColorMap)
 	/* so. If not - must read one byte at a time, and coerce to pixel.   */
 	if (fread(ScanLine, 1, ImageWidth, stdin) != (unsigned)ImageWidth) {
 	    GIF_MESSAGE("RAW input file ended prematurely.");
-	    exit(3);
+	    exit(EXIT_FAILURE);
 	}
 
 	for (j = 0; j < ImageWidth; j++)

@@ -8,18 +8,25 @@
 * History:								     *
 * 6 May 94 - Version 1.0 by Eric Raymond.				     *
 *****************************************************************************/
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <dos.h>
 #include <alloc.h>
-#include <stdlib.h>
 #include <graphics.h>
 #include <io.h>
 #endif /* __MSDOS__ */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#include "gagetarg.h"
+#endif /* HAVE_FCNTL_H */
+#include "getarg.h"
 #include "gif_lib.h"
 
 #define PROGRAM_NAME	"gifovly"
@@ -49,13 +56,12 @@ static char
 	" t%-TransparentColor!d h%-";
 #endif /* SYSV */
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	k;
     GifFileType *GifFileIn, *GifFileOut = (GifFileType *)NULL;
     SavedImage *bp;
-    int	Error,
-	NumLevels, TransparentColorFlag = FALSE, TransparentColor = 0,
+    int	Error, TransparentColorFlag = FALSE, TransparentColor = 0,
 	HelpFlag = FALSE;
 
     if ((Error = GAGetArgs(argc, argv, CtrlStr,
@@ -63,13 +69,13 @@ void main(int argc, char **argv)
 		&HelpFlag)) != FALSE) {
 	GAPrintErrMsg(Error);
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     if ((GifFileIn = DGifOpenFileHandle(0)) == NULL
@@ -77,7 +83,7 @@ void main(int argc, char **argv)
 	|| ((GifFileOut = EGifOpenFileHandle(1)) == (GifFileType *)NULL))
     {
 	PrintGifError();
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     GifFileOut->SWidth = GifFileIn->SWidth;
@@ -95,7 +101,7 @@ void main(int argc, char **argv)
     for (k = 1; k < GifFileIn->ImageCount; k++)
     {
 	register int	i, j;
-	register char	*sp, *tp;
+	register unsigned char	*sp, *tp;
 
 	SavedImage *ovp = &GifFileIn->SavedImages[k];
 
@@ -114,6 +120,8 @@ void main(int argc, char **argv)
 	PrintGifError();
     else if (DGifCloseFile(GifFileIn) == GIF_ERROR)
 	PrintGifError();
+
+    return 0;
 }
 
 /* gifovly.c ends here */

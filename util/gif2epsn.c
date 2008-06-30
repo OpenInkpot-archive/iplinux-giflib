@@ -19,6 +19,10 @@
 * 22 Dec 89 - Fix problems with const strings been modified (Version 1.1).   *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <graphics.h>
 #include <stdlib.h>
@@ -28,12 +32,17 @@
 #include <bios.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif /* HAVE_FCNTL_H */
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"Gif2Epsn"
 
@@ -112,7 +121,7 @@ static void PutString2(FILE *Prt, int DirectPrint, char *Str, int Len);
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	i, j, Error, NumFiles, Size, Row, Col, Width, Height, ExtCode, Count;
     GifRecordType RecordType;
@@ -133,13 +142,13 @@ void main(int argc, char **argv)
 	else if (NumFiles > 1)
 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     if (!PrinterFlag) PrinterName = "";
@@ -164,7 +173,7 @@ void main(int argc, char **argv)
     if (NumFiles == 1) {
 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
     else {
@@ -175,7 +184,7 @@ void main(int argc, char **argv)
 #endif /* __MSDOS__ */
 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
@@ -206,13 +215,13 @@ void main(int argc, char **argv)
     do {
 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
 	switch (RecordType) {
 	    case IMAGE_DESC_RECORD_TYPE:
 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
 		    PrintGifError();
-		    exit(-1);
+		    exit(EXIT_FAILURE);
 		}
 		Row = GifFile->Image.Top; /* Image Position relative to Screen. */
 		Col = GifFile->Image.Left;
@@ -222,8 +231,8 @@ void main(int argc, char **argv)
 		    PROGRAM_NAME, ++ImageNum, Col, Row, Width, Height);
 		if (GifFile->Image.Left + GifFile->Image.Width > GifFile->SWidth ||
 		   GifFile->Image.Top + GifFile->Image.Height > GifFile->SHeight) {
-		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n");
-		    exit(-2);
+		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n",ImageNum);
+		    exit(EXIT_FAILURE);
 		}
 		if (GifFile->Image.Interlace) {
 		    /* Need to perform 4 passes on the images: */
@@ -234,7 +243,7 @@ void main(int argc, char **argv)
 			    if (DGifGetLine(GifFile, &ScreenBuffer[j][Col],
 				Width) == GIF_ERROR) {
 				PrintGifError();
-				exit(-1);
+				exit(EXIT_FAILURE);
 			    }
 			}
 		}
@@ -244,7 +253,7 @@ void main(int argc, char **argv)
 			if (DGifGetLine(GifFile, &ScreenBuffer[Row++][Col],
 				Width) == GIF_ERROR) {
 			    PrintGifError();
-			    exit(-1);
+			    exit(EXIT_FAILURE);
 			}
 		    }
 		}
@@ -253,12 +262,12 @@ void main(int argc, char **argv)
 		/* Skip any extension blocks in file: */
 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
 		    PrintGifError();
-		    exit(-1);
+		    exit(EXIT_FAILURE);
 		}
 		while (Extension != NULL) {
 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
 			PrintGifError();
-			exit(-1);
+			exit(EXIT_FAILURE);
 		    }
 		}
 		break;
@@ -278,8 +287,10 @@ void main(int argc, char **argv)
 
     if (DGifCloseFile(GifFile) == GIF_ERROR) {
 	PrintGifError();
-	exit(-1);
+	exit(EXIT_FAILURE);
     }
+
+    return 0;
 }
 
 /*****************************************************************************
@@ -384,19 +395,27 @@ static void DumpScreen2Epsn(GifRowType *ScreenBuffer,
 #endif /* __MSDOS__ */
 
     if (!DirectPrint) {
-#ifdef __MSDOS__
 	if (strlen(PrinterName) == 0) {
+#ifdef __MSDOS__
 	    setmode(1, O_BINARY);	  /* Make sure it is in binary mode. */
+#endif
 	    Prt = stdout;
 	}
-	else if ((Prt = fopen(PrinterName, "wb")) == NULL ||
-		 setvbuf(Prt, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE))
-#else
-	if (strlen(PrinterName) == 0)
-	    Prt = stdout;
-	else if ((Prt = fopen(PrinterName, "w")) == NULL)
-#endif /* __MSDOS__ */
-	    GIF_EXIT("Failed to open output (printer) file.");
+	else
+        {
+                Prt = fopen(PrinterName, "wb");
+                if (Prt == NULL)
+                {
+                    GIF_EXIT("Failed to open output (printer) file.");
+                }
+
+#ifdef __MSDOS__
+                if (setvbuf(Prt, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE))
+                {
+                    GIF_EXIT("Failed to open output (printer) file.");
+                }
+#endif
+        }
     }
 
     if ((EpsonBuffer = (GifByteType *) malloc(ScreenWidth)) == NULL)

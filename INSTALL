@@ -1,95 +1,236 @@
-			GIFLIB INSTALLATION AND TESTING
+Installation Instructions
+*************************
 
-You will need an ANSI C compiler to use this source code.
+Copyright (C) 1994, 1995, 1996, 1999, 2000, 2001, 2002, 2004, 2005 Free
+Software Foundation, Inc.
 
-The gif_lib library and utilities have been successfully compiled on the
-following platforms:
+This file is free documentation; the Free Software Foundation gives
+unlimited permission to copy, distribute and modify it.
 
-1. IBM-PC, using Turbo C version 2.0/Borland C++ 2.0.
-2. Sun 3, with O.S. 3.5 and O.S. 4.0.3, using gcc (gnu c compiler).
-3. Sun 4, with O.S. 4.1.1, using gcc (gnu c compiler).
-4. HP workstations, running unix BSD4.3, using gcc (gnu c compiler).
-5. SGI personal iris (iris4d) running IRIX 4.3, using its cc.
-6. IBM R6000 running aix, using xlc (Ansi C compiler).
-7. AT&T WGS6386 under System V Release 3.2
-8. Swan 486DB under System V Release 4.0
+Basic Installation
+==================
 
-The first one (IBM-PC) was the main target of the 1.x versions of this package.
-The 2.0 code was extensively hacked on a UNIX machine.  We've tried to preserve
-MS-DOS portability, but the 2.0 code was not tested under DOS before release.
+These are generic installation instructions.
 
-IBM-PC installation and testing differs from the UNIX procedure, and is
-described in a separate section below.
+   The `configure' shell script attempts to guess correct values for
+various system-dependent variables used during compilation.  It uses
+those values to create a `Makefile' in each directory of the package.
+It may also create one or more `.h' files containing system-dependent
+definitions.  Finally, it creates a shell script `config.status' that
+you can run in the future to recreate the current configuration, and a
+file `config.log' containing compiler output (useful mainly for
+debugging `configure').
 
-See the package READ.ME for more information on GIFLIB's capabilities.
+   It can also use an optional file (typically called `config.cache'
+and enabled with `--cache-file=config.cache' or simply `-C') that saves
+the results of its tests to speed up reconfiguring.  (Caching is
+disabled by default to prevent problems with accidental use of stale
+cache files.)
 
-Note: we don't use configure because we're trying to preserve the ability
-to build for DOS.
+   If you need to do unusual things to compile the package, please try
+to figure out how `configure' could check whether to do them, and mail
+diffs or instructions to the address given in the `README' so they can
+be considered for the next release.  If you are using the cache, and at
+some point `config.cache' contains results you don't want to keep, you
+may remove or edit it.
 
-Compile and test - UNIX
------------------------
+   The file `configure.ac' (or `configure.in') is used to create
+`configure' by a program called `autoconf'.  You only need
+`configure.ac' if you want to change it or regenerate `configure' using
+a newer version of `autoconf'.
 
-1. Go to the lib and util directories and tweak the C compiler and linker
-   flags therein for your system.
+The simplest way to compile this package is:
 
-2. Type `make' in the top-level directory.
+  1. `cd' to the directory containing the package's source code and type
+     `./configure' to configure the package for your system.  If you're
+     using `csh' on an old version of System V, you might need to type
+     `sh ./configure' instead to prevent `csh' from trying to execute
+     `configure' itself.
 
-3. Test the package by adding ./util to your path and firing the 'test-unx'
-   script.  This assumes the display is X11, and the environment variable
-   DISPLAY is set properly - it uses gif2X11 as the display utility.
+     Running `configure' takes awhile.  While running, it prints some
+     messages telling which features it is checking for.
 
-Compile and test - IBM PC
--------------------------
+  2. Type `make' to compile the package.
 
-O.K., if you have TC/BC you are in good shape (otherwise you are on your own)
-and compilation will be simple:
+  3. Optionally, type `make check' to run any self-tests that come with
+     the package.
 
-1. Goto to the makefiles in .\lib and .\util (called makefile.tc in both
-   places) and change the variable CC_LIBS to the exact place you have your
-   cc libraries. I use to put them in ram disk (disk f:) for fast access.
-   Make sure this is short variable or otherwise dos will complain about
-   lines too long (the stupid 128 chars per line), in linkage...
+  4. Type `make install' to install the programs and any data files and
+     documentation.
 
-2. Few of the utilities on .\util needs the TC graphic libraries (the gif2xxxx
-   utilities). You need to create a library named graphbgi.lib that holds all
-   the BGI drivers and CHR fonts. You do so by a sequence similar to:
+  5. You can remove the program binaries and object files from the
+     source code directory by typing `make clean'.  To also remove the
+     files that `configure' created (so you can compile the package for
+     a different kind of computer), type `make distclean'.  There is
+     also a `make maintainer-clean' target, but that is intended mainly
+     for the package's developers.  If you use it, you may have to get
+     all sorts of other programs in order to regenerate files that came
+     with the distribution.
 
-   a. bgiobj herc       (bgiobj.exe is on one of your TC 2.0 diskettes).
-   b. bgiobj egavga
-   c. bgiobj cga
-   d. bgiobj ibm8514
-   e. bgiobj pc3270
-   f. bgiobj goth
-   g. bgiobj litt
-   h. bgiobj sans
-   i. bgiobj trip
+Compilers and Options
+=====================
 
-     This will convert all this drivers/fonts into .OBJ files, which can be all
-   linked to creat the library:
+Some systems require unusual options for compilation or linking that the
+`configure' script does not know about.  Run `./configure --help' for
+details on some of the pertinent environment variables.
 
-   tlib graphbgi.lib +herc.obj +egavga.obj ... +trip.obj, graphbgi.lst
+   You can give `configure' initial values for configuration parameters
+by setting variables in the command line or in the environment.  Here
+is an example:
 
-     Copy this library to the same directory as specified by CC_LIBS in 1.
+     ./configure CC=c89 CFLAGS=-O2 LIBS=-lposix
 
-3. Decide what directory you want the executables to br copied to and create
-   it if it is new. Goto .\util and set the DEST variable in the makefile 
-   (makefile.tc) to that directory.
+   *Note Defining Variables::, for more details.
 
-4. Fire the compilation by executing make-ibm.bat
+Compiling For Multiple Architectures
+====================================
 
+You can compile the package for more than one kind of computer at the
+same time, by placing the object files for each architecture in their
+own directory.  To do this, you must use a version of `make' that
+supports the `VPATH' variable, such as GNU `make'.  `cd' to the
+directory where you want the object files and executables to go and run
+the `configure' script.  `configure' automatically checks for the
+source code in the directory that `configure' is in and in `..'.
 
-To test most of the utilities reconfigure test-ibm.bat as follows:
-1. make sure the new exectuables directory is in your path variable.
-2. The default display program is gif2bgi (in this package). If may want
-   to change its setup. See ./doc/gif2bgi.doc for more.
-3. Set the GIF_DIR variable in the batch file to the absolute path of
-   ./pic directory (hold some gif examples).
+   If you have to use a `make' that does not support the `VPATH'
+variable, you have to compile the package for one architecture at a
+time in the source code directory.  After you have installed the
+package for one architecture, use `make distclean' before reconfiguring
+for another architecture.
 
-Run test-ibm.bat. You will want to print gif2bgi.doc in ./doc so you will
-know how to use it (at list how to exit...).
+Installation Names
+==================
 
-						Eric S. Raymond
-						esr@snark.thyrsus.com
+By default, `make install' will install the package's files in
+`/usr/local/bin', `/usr/local/man', etc.  You can specify an
+installation prefix other than `/usr/local' by giving `configure' the
+option `--prefix=PREFIX'.
 
-						Gershon Elber
-						gershon@cs.utah.edu
+   You can specify separate installation prefixes for
+architecture-specific files and architecture-independent files.  If you
+give `configure' the option `--exec-prefix=PREFIX', the package will
+use PREFIX as the prefix for installing programs and libraries.
+Documentation and other data files will still use the regular prefix.
+
+   In addition, if you use an unusual directory layout you can give
+options like `--bindir=DIR' to specify different values for particular
+kinds of files.  Run `configure --help' for a list of the directories
+you can set and what kinds of files go in them.
+
+   If the package supports it, you can cause programs to be installed
+with an extra prefix or suffix on their names by giving `configure' the
+option `--program-prefix=PREFIX' or `--program-suffix=SUFFIX'.
+
+Optional Features
+=================
+
+Some packages pay attention to `--enable-FEATURE' options to
+`configure', where FEATURE indicates an optional part of the package.
+They may also pay attention to `--with-PACKAGE' options, where PACKAGE
+is something like `gnu-as' or `x' (for the X Window System).  The
+`README' should mention any `--enable-' and `--with-' options that the
+package recognizes.
+
+   For packages that use the X Window System, `configure' can usually
+find the X include and library files automatically, but if it doesn't,
+you can use the `configure' options `--x-includes=DIR' and
+`--x-libraries=DIR' to specify their locations.
+
+Specifying the System Type
+==========================
+
+There may be some features `configure' cannot figure out automatically,
+but needs to determine by the type of machine the package will run on.
+Usually, assuming the package is built to be run on the _same_
+architectures, `configure' can figure that out, but if it prints a
+message saying it cannot guess the machine type, give it the
+`--build=TYPE' option.  TYPE can either be a short name for the system
+type, such as `sun4', or a canonical name which has the form:
+
+     CPU-COMPANY-SYSTEM
+
+where SYSTEM can have one of these forms:
+
+     OS KERNEL-OS
+
+   See the file `config.sub' for the possible values of each field.  If
+`config.sub' isn't included in this package, then this package doesn't
+need to know the machine type.
+
+   If you are _building_ compiler tools for cross-compiling, you should
+use the `--target=TYPE' option to select the type of system they will
+produce code for.
+
+   If you want to _use_ a cross compiler, that generates code for a
+platform different from the build platform, you should specify the
+"host" platform (i.e., that on which the generated programs will
+eventually be run) with `--host=TYPE'.
+
+Sharing Defaults
+================
+
+If you want to set default values for `configure' scripts to share, you
+can create a site shell script called `config.site' that gives default
+values for variables like `CC', `cache_file', and `prefix'.
+`configure' looks for `PREFIX/share/config.site' if it exists, then
+`PREFIX/etc/config.site' if it exists.  Or, you can set the
+`CONFIG_SITE' environment variable to the location of the site script.
+A warning: not all `configure' scripts look for a site script.
+
+Defining Variables
+==================
+
+Variables not defined in a site shell script can be set in the
+environment passed to `configure'.  However, some packages may run
+configure again during the build, and the customized values of these
+variables may be lost.  In order to avoid this problem, you should set
+them in the `configure' command line, using `VAR=value'.  For example:
+
+     ./configure CC=/usr/local2/bin/gcc
+
+causes the specified `gcc' to be used as the C compiler (unless it is
+overridden in the site shell script).  Here is a another example:
+
+     /bin/bash ./configure CONFIG_SHELL=/bin/bash
+
+Here the `CONFIG_SHELL=/bin/bash' operand causes subsequent
+configuration-related scripts to be executed by `/bin/bash'.
+
+`configure' Invocation
+======================
+
+`configure' recognizes the following options to control how it operates.
+
+`--help'
+`-h'
+     Print a summary of the options to `configure', and exit.
+
+`--version'
+`-V'
+     Print the version of Autoconf used to generate the `configure'
+     script, and exit.
+
+`--cache-file=FILE'
+     Enable the cache: use and save the results of the tests in FILE,
+     traditionally `config.cache'.  FILE defaults to `/dev/null' to
+     disable caching.
+
+`--config-cache'
+`-C'
+     Alias for `--cache-file=config.cache'.
+
+`--quiet'
+`--silent'
+`-q'
+     Do not print messages saying which checks are being made.  To
+     suppress all normal output, redirect it to `/dev/null' (any error
+     messages will still be shown).
+
+`--srcdir=DIR'
+     Look for the package's source code in directory DIR.  Usually
+     `configure' can determine that directory automatically.
+
+`configure' also accepts some other, not widely useful, options.  Run
+`configure --help' for more details.
+

@@ -23,8 +23,8 @@
 
 # Declare the include files and libraries for the GIF utils:
 INC = -I../lib
-GIF_LIB = ../lib/libgif.so.3.0
-GIF_INC_DEPEND = ../lib/gif_lib.h ../lib/gagetarg.h
+GIF_LIB = ../lib/libgif.a
+GIF_INC_DEPEND = ../lib/libgif.a ../lib/gif_lib.h ../lib/getarg.h
 
 # Where to copy executables to:
 DEST = /usr/bin
@@ -83,10 +83,10 @@ DEST = /usr/bin
 #
 CC = gcc
 #CFLAGS = $(INC) -fno-builtin -O -s -W -Wreturn-type -Wcomment
-CFLAGS = $(INC) -fno-builtin -g -W -Wreturn-type -Wcomment -Wall -O2
+CFLAGS = $(INC) -fno-builtin -g -W -Wreturn-type -Wcomment
 XLIBS = -lX11
-X_INC_DIR = /usr/X11R6/include
-X_LIB_DIR = /usr/X11R6/lib
+X_INC_DIR = /usr/X11/include
+X_LIB_DIR = /usr/X11/lib
 
 BINARIES = gif2epsn gif2ps gif2rgb gif2x11 gifasm gifbg \
 	gifclip gifclrmp gifcomb giffix gifflip gifhisto \
@@ -105,7 +105,7 @@ rle: $(RLE)
 iris: $(IRIS)
 
 install-all:
-	cp $(BINARIES) $(SCRIPTS) $(DESTDIR)$(DEST)
+	cp $(BINARIES) $(SCRIPTS) $(DEST)
 
 install-rle:
 	cp $(RLE) $(DEST)

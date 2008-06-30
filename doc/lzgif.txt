@@ -121,4 +121,3 @@ decoding process.
 
 I Hope this helps take some of the mystery out of LZW compression, which is
 really quite easy once you 'see' it.      Bob Montgomery
-

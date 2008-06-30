@@ -14,18 +14,28 @@
 * 22 Dec 89 - Fix problem with tmpnam (Version 1.1).                         *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <io.h>
-#include <stdlib.h>
 #include <alloc.h>
 #endif /* __MSDOS__ */
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"GifInto"
 
@@ -65,7 +75,7 @@ static int
 * The is simply: read until EOF, then close the output, test its length, and  *
 * if non zero then rename it.						      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	Error, NumFiles,
 	MinSizeFlag = FALSE, HelpFlag = FALSE;
@@ -76,31 +86,39 @@ void main(int argc, char **argv)
     if ((Error = GAGetArgs(argc, argv, CtrlStr, &GifQuietPrint,
 		&MinSizeFlag, &MinFileSize, &HelpFlag,
 		&NumFiles, &FileName)) != FALSE ||
-		(NumFiles > 1 && !HelpFlag) ||
-		(*FileName == NULL && !HelpFlag)) {
+		(NumFiles > 1 && !HelpFlag)) {
 	if (Error)
 	    GAPrintErrMsg(Error);
 	else if (NumFiles != 1)
 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     /* Open the stdin in binary mode and increase its buffer size: */
 #ifdef __MSDOS__
     setmode(0, O_BINARY);		  /* Make sure it is in binary mode. */
-    if ((Fin = fdopen(0, "rb")) == NULL ||	   /* Make it into a stream: */
-        setvbuf(Fin, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE))/* Incr. stream buf.*/
-#else
-    if ((Fin = fdopen(0, "r")) == NULL) 	   /* Make it into a stream: */
-#endif /* __MSDOS__ */
-	GIF_EXIT("Failed to open input.");
+#endif
+
+    Fin = fdopen(0, "rb");   /* Make it into a stream: */
+
+    if (Fin == NULL)
+    {
+        GIF_EXIT("Failed to open input.");
+    }
+
+#ifdef __MSDOS__
+    if (setvbuf(Fin, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE)) /* Incr. stream buf.*/
+    {
+        GIF_EXIT("Failed to open input.");
+    }
+#endif
 
     /* Isolate the directory where our destination is, and set tmp file name */
     /* in the very same directory.					     */
@@ -121,13 +139,18 @@ void main(int argc, char **argv)
     if (strlen(p) == 0) p = DEFAULT_TMP_NAME;
     strcat(FoutTmpName, p);
 
-#ifdef __MSDOS__
-    if ((Fout = fopen(FoutTmpName, "wb")) == NULL ||
-	setvbuf(Fout, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE))/*Incr. stream buf.*/
-#else
-    if ((Fout = fopen(FoutTmpName, "w")) == NULL)
-#endif /* __MSDOS__ */
+    Fout = fopen(FoutTmpName, "wb");
+    if (Fout == NULL)
+    {
 	GIF_EXIT("Failed to open output.");
+    }
+
+#ifdef __MSDOS__
+    if (setvbuf(Fout, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE)) /*Incr. stream buf.*/
+    {
+	GIF_EXIT("Failed to open output.");
+    }
+#endif /* __MSDOS__ */
 
     while (!feof(Fin)) {
 	if (putc(getc(Fin), Fout) == EOF)
@@ -157,4 +180,6 @@ void main(int argc, char **argv)
 	unlink(FoutTmpName);
 	GIF_MESSAGE("File too small - not renamed.");
     }
+
+    return 0;
 }

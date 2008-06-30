@@ -16,16 +16,23 @@
 * 12 Jul 89 - Version 1.0 by Gershon Elber.				     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <stdlib.h>
 #include <alloc.h>
 #endif /* _MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"GifComb"
 
@@ -61,7 +68,7 @@ static void QuitGifError(GifFileType *GifFileIn1, GifFileType *GifFileIn2,
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	i, j, Error, NumFiles, Size,
 	MaskFlag = FALSE, HelpFlag = FALSE;
@@ -82,13 +89,13 @@ void main(int argc, char **argv)
 	else if (NumFiles != 2)
 	    GIF_MESSAGE("Error in command line parsing - two GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     /* Open all input files (two GIF to combine, and optional mask): */
@@ -196,12 +203,15 @@ void main(int argc, char **argv)
     }
 
     FreeMapObject(ColorUnion);		    /* We dont need this any more... */
+    ColorUnion = NULL;
 
     if (DGifCloseFile(GifFileIn1) == GIF_ERROR ||
 	DGifCloseFile(GifFileIn2) == GIF_ERROR ||
 	EGifCloseFile(GifFileOut) == GIF_ERROR ||
 	(MaskFlag && DGifCloseFile(GifMaskFile) == GIF_ERROR))
 	QuitGifError(GifFileIn1, GifFileIn2, GifMaskFile, GifFileOut);
+
+    return 0;
 }
 
 /******************************************************************************
@@ -252,5 +262,5 @@ static void QuitGifError(GifFileType *GifFileIn1, GifFileType *GifFileIn2,
     if (GifFileIn2 != NULL) DGifCloseFile(GifFileIn2);
     if (GifMaskFile != NULL) DGifCloseFile(GifMaskFile);
     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
-    exit(1);
+    exit(EXIT_FAILURE);
 }

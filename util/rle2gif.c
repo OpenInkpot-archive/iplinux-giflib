@@ -13,9 +13,12 @@
 * 5 Jan 90 - Version 1.0 by Gershon Elber.				     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <graphics.h>
-#include <stdlib.h>
 #include <alloc.h>
 #include <io.h>
 #include <dos.h>
@@ -23,11 +26,14 @@
 #endif /* __MSDOS__ */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif /* HAVE_FCNTL_H */
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #include "rle.h"			   /* The rle tool kit header files. */
 
@@ -71,20 +77,20 @@ static void LoadRle(char *FileName,
 		    GifByteType **BlueBuffer,
 		    int *Width, int *Height);
 static void SaveGif(GifByteType *OutputBuffer,
-		    GifColorType *OutputColorMap,
+		    ColorMapObject *OutputColorMap,
 		    int ExpColorMapSize, int Width, int Height);
 static void QuitGifError(GifFileType *GifFile);
 
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	i, j, Error, NumFiles, Width, Height;
     char **FileName = NULL;
     GifByteType *RedBuffer = NULL, *GreenBuffer = NULL, *BlueBuffer = NULL,
         *OutputBuffer = NULL;
-    GifColorType *OutputColorMap = NULL;
+    ColorMapObject *OutputColorMap = NULL;
 
     if ((Error = GAGetArgs(argc, argv, CtrlStr, &GifQuietPrint,
 		&ColorFlag, &ExpNumOfColors, &HelpFlag,
@@ -95,13 +101,13 @@ void main(int argc, char **argv)
 	else if (NumFiles > 1)
 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     ColorMapSize = 1 << ExpNumOfColors;
@@ -114,22 +120,22 @@ void main(int argc, char **argv)
 	LoadRle(NULL,
 		&RedBuffer, &GreenBuffer, &BlueBuffer, &Width, &Height);
     }
-
-    if ((OutputColorMap = (GifColorType *) malloc(ColorMapSize *
-					      sizeof(GifColorType))) == NULL ||
-	(OutputBuffer = (GifByteType *) malloc(Width * Height *
+    if ((OutputColorMap = MakeMapObject(ColorMapSize, NULL)) == NULL ||
+	    (OutputBuffer = (GifByteType *) malloc(Width * Height *
 					    sizeof(GifByteType))) == NULL)
 	GIF_EXIT("Failed to allocate memory required, aborted.");
 
     if (QuantizeBuffer(Width, Height, &ColorMapSize,
 		       RedBuffer, GreenBuffer, BlueBuffer,
-		       OutputBuffer, OutputColorMap) == GIF_ERROR)
+		       OutputBuffer, OutputColorMap->Colors) == GIF_ERROR)
 	QuitGifError(NULL);
     free((char *) RedBuffer);
     free((char *) GreenBuffer);
     free((char *) BlueBuffer);
 
     SaveGif(OutputBuffer, OutputColorMap, ExpNumOfColors, Width, Height);
+
+    return 0;
 }
 
 /******************************************************************************
@@ -188,7 +194,7 @@ static void LoadRle(char *FileName,
 * Save the GIF resulting image.						      *
 ******************************************************************************/
 static void SaveGif(GifByteType *OutputBuffer,
-		    GifColorType *OutputColorMap,
+		    ColorMapObject *OutputColorMap,
 		    int ExpColorMapSize, int Width, int Height)
 {
     int i;
@@ -200,10 +206,10 @@ static void SaveGif(GifByteType *OutputBuffer,
 	QuitGifError(GifFile);
 
     if (EGifPutScreenDesc(GifFile,
-			  Width, Height, ExpColorMapSize, 0, ExpColorMapSize,
+			  Width, Height, ExpColorMapSize, 0,
 			  OutputColorMap) == GIF_ERROR ||
 	EGifPutImageDesc(GifFile,
-			 0, 0, Width, Height, FALSE, ExpColorMapSize, NULL) ==
+			 0, 0, Width, Height, FALSE, NULL) ==
 	                                                             GIF_ERROR)
 	QuitGifError(GifFile);
 
@@ -230,5 +236,5 @@ static void QuitGifError(GifFileType *GifFile)
 {
     PrintGifError();
     if (GifFile != NULL) EGifCloseFile(GifFile);
-    exit(1);
+    exit(EXIT_FAILURE);
 }

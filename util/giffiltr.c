@@ -1,7 +1,7 @@
 /*
  * Skeleton file for generic GIF `filter' program --- sequentially read GIF
  * records from stdin, process them, send them out.  Most of the junk above
- * `void main' isn't needed for the skeleton, but is likely to be for what
+ * `int main' isn't needed for the skeleton, but is likely to be for what
  * you'll do with it.
  *
  * If you compile this, it will turn into an expensive GIF copying routine;
@@ -14,18 +14,25 @@
  * compression may use more (or fewer) bits.  The uncompressed rasters should,
  * however, be identical (you can check this with icon2gif -d).
  */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <dos.h>
 #include <alloc.h>
-#include <stdlib.h>
 #include <graphics.h>
 #include <io.h>
 #endif /* __MSDOS__ */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#include "gagetarg.h"
+#endif /* HAVE_FCNTL_H */
+#include "getarg.h"
 #include "gif_lib.h"
 
 #define PROGRAM_NAME	"giffiltr"
@@ -44,13 +51,13 @@ static void QuitGifError(GifFileType *GifFileIn, GifFileType *GifFileOut)
     PrintGifError();
     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
-    exit(1);
+    exit(EXIT_FAILURE);
 }
 
 /******************************************************************************
 * Main sequence								      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     GifFileType *GifFileIn = NULL, *GifFileOut = NULL;
     GifRecordType RecordType;
@@ -105,23 +112,18 @@ void main(int argc, char **argv)
 		}
 		break;
 	    case EXTENSION_RECORD_TYPE:
-		/* Copy the extension header */
+		/* Skip any extension blocks in file: */
 		if (DGifGetExtension(GifFileIn, &ExtCode, &Extension) == GIF_ERROR)
 		    QuitGifError(GifFileIn, GifFileOut);
-		if (EGifPutExtensionHeader(GifFileOut, ExtCode) == GIF_ERROR)
+		if (EGifPutExtension(GifFileOut, ExtCode, Extension[0],
+							Extension + 1) == GIF_ERROR)
 		    QuitGifError(GifFileIn, GifFileOut);
 
-		/* Copy the extension data blocks */
+		/* No support to more than one extension blocks, so discard: */
 		while (Extension != NULL) {
-		    if (EGifPutExtensionBlock(GifFileOut, Extension[0],
-			Extension+1) == GIF_ERROR)
-			    QuitGifError(GifFileIn, GifFileOut);
 		    if (DGifGetExtensionNext(GifFileIn, &Extension) == GIF_ERROR)
 			QuitGifError(GifFileIn, GifFileOut);
 		}
-		/* Close the extension with a 0 length data block */
-		if (EGifPutExtensionBlock(GifFileOut, 0, NULL) == GIF_ERROR)
-			QuitGifError(GifFileIn, GifFileOut);
 		break;
 	    case TERMINATE_RECORD_TYPE:
 		break;
@@ -136,5 +138,5 @@ void main(int argc, char **argv)
     if (EGifCloseFile(GifFileOut) == GIF_ERROR)
 	QuitGifError(GifFileIn, GifFileOut);
 
-    exit(0);
+    return 0;
 }

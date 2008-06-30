@@ -22,17 +22,24 @@
 * 17 Jul 89 - Version 1.0 by Gershon Elber.				     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <stdlib.h>
 #include <alloc.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <math.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"GifClrMp"
 
@@ -80,7 +87,7 @@ static void QuitGifError(GifFileType *GifFileIn, GifFileType *GifFileOut);
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	Error, NumFiles, ExtCode, CodeSize, ImageNum = 0,
 	ImageNFlag = FALSE, ImageN, HelpFlag = FALSE, HasGIFOutput;
@@ -100,13 +107,13 @@ void main(int argc, char **argv)
 	else if (NumFiles > 1)
 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     if (SaveFlag + LoadFlag + GammaFlag + TranslateFlag > 1)
@@ -153,7 +160,7 @@ void main(int argc, char **argv)
 	    /* We can quit here, as we have the color map: */
 	    if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
 	    fclose(ColorFile);
-	    exit(0);
+	    exit(EXIT_SUCCESS);
 	}
     }
     /* And dump out its new possible repositioned screen information: */
@@ -173,14 +180,14 @@ void main(int argc, char **argv)
 	    case IMAGE_DESC_RECORD_TYPE:
 		if (DGifGetImageDesc(GifFileIn) == GIF_ERROR)
 		    QuitGifError(GifFileIn, GifFileOut);
-		if (++ImageNum == ImageN && ImageNFlag) {
+		if ((++ImageNum == ImageN) && ImageNFlag) {
 		    /* We are suppose to modify this image color map, do it: */
 		    GifFileIn->SColorMap =ModifyColorMap(GifFileIn->SColorMap);
 		    if (!HasGIFOutput) {
 			/* We can quit here, as we have the color map: */
 			if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
 			fclose(ColorFile);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		    }
 		}
 		if (HasGIFOutput)
@@ -191,7 +198,7 @@ void main(int argc, char **argv)
 			GifFileIn->Image.ColorMap) == GIF_ERROR)
 			QuitGifError(GifFileIn, GifFileOut);
 
-		if (!TranslateFlag || ImageNFlag && ImageN != ImageNum)
+		if (!TranslateFlag || (ImageNFlag && (ImageN != ImageNum)))
 		{
 		    /* Now read image itself in decoded form as we don't */
 		    /* really care what we have there, and this is much  */
@@ -237,26 +244,19 @@ void main(int argc, char **argv)
 		}
 		break;
 	    case EXTENSION_RECORD_TYPE:
-		/* Copy the extension header */
+		/* Skip any extension blocks in file: */
 		if (DGifGetExtension(GifFileIn, &ExtCode, &Extension) == GIF_ERROR)
 		    QuitGifError(GifFileIn, GifFileOut);
 		if (HasGIFOutput)
-		    if (EGifPutExtensionHeader(GifFileOut, ExtCode) == GIF_ERROR)
+		    if (EGifPutExtension(GifFileOut, ExtCode, Extension[0],
+							Extension) == GIF_ERROR)
 			QuitGifError(GifFileIn, GifFileOut);
 
-		/* Copy the extension data blocks */
+		/* No support to more than one extension blocks, so discard: */
 		while (Extension != NULL) {
-		    if (HasGIFOutput)
-			if (EGifPutExtensionBlock(GifFileOut, Extension[0],
-			    Extension+1) == GIF_ERROR)
-				QuitGifError(GifFileIn, GifFileOut);
 		    if (DGifGetExtensionNext(GifFileIn, &Extension) == GIF_ERROR)
 			QuitGifError(GifFileIn, GifFileOut);
 		}
-		/* Close the extension with a 0 length data block */
-		if (HasGIFOutput)
-		    if (EGifPutExtensionBlock(GifFileOut, 0, NULL) == GIF_ERROR)
-			    QuitGifError(GifFileIn, GifFileOut);
 		break;
 	    case TERMINATE_RECORD_TYPE:
 		break;
@@ -271,6 +271,8 @@ void main(int argc, char **argv)
     if (HasGIFOutput)
 	if (EGifCloseFile(GifFileOut) == GIF_ERROR)
 	    QuitGifError(GifFileIn, GifFileOut);
+
+    return 0;
 }
 
 /******************************************************************************
@@ -320,9 +322,11 @@ static ColorMapObject *ModifyColorMap(ColorMapObject *ColorMap)
 
 	/* Read the translation table in TranslateFile: */
 	for (i = 0; i < ColorMap->ColorCount; i++) {
+	    int tmp;
 	    if (feof(TranslateFile))
 		GIF_EXIT("Color file to load color map from, too small.");
-	    fscanf(TranslateFile, "%3d %3d\n", &Dummy, &Translation[i]);
+	    fscanf(TranslateFile, "%3d %3d\n", &Dummy, &tmp);
+	    Translation[i] = tmp;
 	    if (Translation[i] > Max)
 		Max = Translation[i];
 	}
@@ -352,6 +356,6 @@ static void QuitGifError(GifFileType *GifFileIn, GifFileType *GifFileOut)
     PrintGifError();
     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
-    exit(1);
+    exit(EXIT_FAILURE);
 }
 

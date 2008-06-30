@@ -14,16 +14,23 @@
 * 21 Sep 92 - Version 1.0 by Eric S. Raymond.				     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <stdlib.h>
 #include <alloc.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"GifColor"
 
@@ -61,7 +68,7 @@ static void GenRasterTextLine(GifRowType *RasterBuffer, char *TextLine,
 /******************************************************************************
 * Interpret the command line and generate the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	i, j, l, Error, GifQuietPrint, ColorMapSize,
 	BackGroundFlag = FALSE, HelpFlag = FALSE;
@@ -70,6 +77,7 @@ void main(int argc, char **argv)
     ColorMapObject *ColorMap;
     GifFileType *GifFile;
     GifColorType	ScratchMap[256];
+    int red, green, blue;
 
     if ((Error = GAGetArgs(argc, argv, CtrlStr,
 			   &GifQuietPrint,
@@ -77,13 +85,13 @@ void main(int argc, char **argv)
 			   &HelpFlag)) != FALSE) {
 	GAPrintErrMsg(Error);
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     /* Allocate the raster buffer for GIF_FONT_HEIGHT scan lines. */
@@ -102,9 +110,10 @@ void main(int argc, char **argv)
     ColorMapSize = 0;
     while (fscanf(stdin,
 		  "%*3d %3d %3d %3d\n",
-		  &ScratchMap[ColorMapSize].Red,
-		  &ScratchMap[ColorMapSize].Green,
-		  &ScratchMap[ColorMapSize].Blue) == 3) {
+		  &red, &green, &blue) == 3) {
+	    ScratchMap[ColorMapSize].Red = red;
+	    ScratchMap[ColorMapSize].Green = green;
+	    ScratchMap[ColorMapSize].Blue = blue;
 	    ColorMapSize++;
 	}
 
@@ -141,6 +150,8 @@ void main(int argc, char **argv)
 
     if (EGifCloseFile(GifFile) == GIF_ERROR)
 	QuitGifError(GifFile);
+
+    return 0;
 }
 
 /******************************************************************************
@@ -149,7 +160,7 @@ void main(int argc, char **argv)
 static void GenRasterTextLine(GifRowType *RasterBuffer, char *TextLine,
 					int BufferWidth, int ForeGroundIndex)
 {
-    char c;
+    unsigned char c;
     unsigned char Byte, Mask;
     int i, j, k, CharPosX, Len = strlen(TextLine);
 
@@ -159,7 +170,7 @@ static void GenRasterTextLine(GifRowType *RasterBuffer, char *TextLine,
     for (i = CharPosX = 0; i < Len; i++, CharPosX += GIF_FONT_WIDTH) {
 	c = TextLine[i];
 	for (j = 0; j < GIF_FONT_HEIGHT; j++) {
-	    Byte = AsciiTable[c][j];
+	    Byte = AsciiTable[(unsigned short)c][j];
 	    for (k = 0, Mask = 128; k < GIF_FONT_WIDTH; k++, Mask >>= 1)
 		if (Byte & Mask)
 		    RasterBuffer[j][CharPosX + k] = ForeGroundIndex;
@@ -174,5 +185,5 @@ static void QuitGifError(GifFileType *GifFile)
 {
     PrintGifError();
     if (GifFile != NULL) EGifCloseFile(GifFile);
-    exit(1);
+    exit(EXIT_FAILURE);
 }

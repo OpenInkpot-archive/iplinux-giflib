@@ -15,6 +15,10 @@
 * 15 Jun 91 - Version 1.0 by Gershon Elber.				     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <graphics.h>
 #include <stdlib.h>
@@ -24,12 +28,17 @@
 #include <bios.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif /* HAVE_FCNTL_H */
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"RGB2Gif"
 
@@ -80,7 +89,7 @@ static void QuitGifError(GifFileType *GifFile);
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	Error, NumFiles, Width, Height, SizeFlag;
     char **FileName = NULL;
@@ -98,13 +107,13 @@ void main(int argc, char **argv)
 	else if (NumFiles > 1)
 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     ColorMapSize = 1 << ExpNumOfColors;
@@ -132,6 +141,8 @@ void main(int argc, char **argv)
     free((char *) BlueBuffer);
 
     SaveGif(OutputBuffer, OutputColorMap, ExpNumOfColors, Width, Height);
+
+    return 0;
 }
 
 /******************************************************************************
@@ -168,11 +179,7 @@ static void LoadRGB(char *FileName,
 	char OneFileName[80];
 
 	if (OneFileFlag) {
-#ifdef __MSDOS__
 	    if ((f[0] = fopen(FileName, "rb")) == NULL)
-#else
-	    if ((f[0] = fopen(FileName, "r")) == NULL)
-#endif /* __MSDOS__ */
 		GIF_EXIT("Can't open input file name.");
 	}
 	else {
@@ -182,11 +189,7 @@ static void LoadRGB(char *FileName,
 		strcpy(OneFileName, FileName);
 		strcat(OneFileName, Postfixes[i]);
 
-#ifdef __MSDOS__
 		if ((f[i] = fopen(OneFileName, "rb")) == NULL)
-#else
-		if ((f[i] = fopen(OneFileName, "r")) == NULL)
-#endif /* __MSDOS__ */
 		    GIF_EXIT("Can't open input file name.");
 	    }
 	}
@@ -287,5 +290,5 @@ static void QuitGifError(GifFileType *GifFile)
 {
     PrintGifError();
     if (GifFile != NULL) EGifCloseFile(GifFile);
-    exit(1);
+    exit(EXIT_FAILURE);
 }

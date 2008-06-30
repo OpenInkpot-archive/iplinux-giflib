@@ -14,6 +14,10 @@
 *  2 Aug 91 - Version 1.0 by Gershon Elber.				     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <graphics.h>
 #include <stdlib.h>
@@ -23,13 +27,18 @@
 #include <bios.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <math.h>
 #include <ctype.h>
 #include <string.h>
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif /* HAVE_FCNTL_H */
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #ifndef M_PI
 #define M_PI        3.14159265358979323846
@@ -78,7 +87,7 @@ static void QuitGifError(GifFileType *DstGifFile);
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	i, j, Size, Error, NumFiles, Col, Row, Count, ExtCode,
 	DstWidth, DstHeight, Width, Height,
@@ -104,19 +113,19 @@ void main(int argc, char **argv)
 	else if (NumFiles > 1)
 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     if (NumFiles == 1) {
 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
     else {
@@ -127,7 +136,7 @@ void main(int argc, char **argv)
 #endif /* __MSDOS__ */
 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
@@ -158,13 +167,13 @@ void main(int argc, char **argv)
     do {
 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
 	switch (RecordType) {
 	    case IMAGE_DESC_RECORD_TYPE:
 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
 		    PrintGifError();
-		    exit(-1);
+		    exit(EXIT_FAILURE);
 		}
 		Row = GifFile->Image.Top; /* Image Position relative to Screen. */
 		Col = GifFile->Image.Left;
@@ -174,8 +183,8 @@ void main(int argc, char **argv)
 		    PROGRAM_NAME, ++ImageNum, Col, Row, Width, Height);
 		if (GifFile->Image.Left + GifFile->Image.Width > GifFile->SWidth ||
 		   GifFile->Image.Top + GifFile->Image.Height > GifFile->SHeight) {
-		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n");
-		    exit(-2);
+		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n",ImageNum);
+		    exit(EXIT_FAILURE);
 		}
 		if (GifFile->Image.Interlace) {
 		    /* Need to perform 4 passes on the images: */
@@ -186,7 +195,7 @@ void main(int argc, char **argv)
 			    if (DGifGetLine(GifFile, &ScreenBuffer[j][Col],
 				Width) == GIF_ERROR) {
 				PrintGifError();
-				exit(-1);
+				exit(EXIT_FAILURE);
 			    }
 			}
 		}
@@ -196,7 +205,7 @@ void main(int argc, char **argv)
 			if (DGifGetLine(GifFile, &ScreenBuffer[Row++][Col],
 				Width) == GIF_ERROR) {
 			    PrintGifError();
-			    exit(-1);
+			    exit(EXIT_FAILURE);
 			}
 		    }
 		}
@@ -205,12 +214,12 @@ void main(int argc, char **argv)
 		/* Skip any extension blocks in file: */
 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
 		    PrintGifError();
-		    exit(-1);
+		    exit(EXIT_FAILURE);
 		}
 		while (Extension != NULL) {
 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
 			PrintGifError();
-			exit(-1);
+			exit(EXIT_FAILURE);
 		    }
 		}
 		break;
@@ -233,6 +242,8 @@ void main(int argc, char **argv)
     /* Perform the actual rotation and dump the image: */
     RotateGifImage(ScreenBuffer, GifFile, Angle, ColorMap,
 		   DstWidth, DstHeight);
+
+    return 0;
 }
 
 /******************************************************************************
@@ -315,5 +326,5 @@ static void QuitGifError(GifFileType *DstGifFile)
 {
     PrintGifError();
     if (DstGifFile != NULL) EGifCloseFile(DstGifFile);
-    exit(1);
+    exit(EXIT_FAILURE);
 }

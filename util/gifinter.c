@@ -15,16 +15,23 @@
 * 21 Dec 89 - Fix problems with -i and -s flags (Version 1.1).               *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <stdlib.h>
 #include <alloc.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"GifInter"
 
@@ -69,7 +76,7 @@ static void QuitGifError(GifFileType *GifFileIn, GifFileType *GifFileOut);
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	Error, NumFiles, ExtCode;
     GifRecordType RecordType;
@@ -87,13 +94,13 @@ void main(int argc, char **argv)
 	else if (NumFiles > 1)
 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     if (NumFiles == 1) {
@@ -143,23 +150,18 @@ void main(int argc, char **argv)
 		    QuitGifError(GifFileIn, GifFileOut);
 		break;
 	    case EXTENSION_RECORD_TYPE:
-		/* Copy the extension header */
+		/* Skip any extension blocks in file: */
 		if (DGifGetExtension(GifFileIn, &ExtCode, &Extension) == GIF_ERROR)
 		    QuitGifError(GifFileIn, GifFileOut);
-		if (EGifPutExtensionHeader(GifFileOut, ExtCode) == GIF_ERROR)
+		if (EGifPutExtension(GifFileOut, ExtCode, Extension[0],
+							Extension) == GIF_ERROR)
 		    QuitGifError(GifFileIn, GifFileOut);
 
-		/* Copy the extension data blocks */
+		/* No support to more than one extension blocks, so discard: */
 		while (Extension != NULL) {
-		    if (EGifPutExtensionBlock(GifFileOut, Extension[0],
-			Extension+1) == GIF_ERROR)
-			    QuitGifError(GifFileIn, GifFileOut);
 		    if (DGifGetExtensionNext(GifFileIn, &Extension) == GIF_ERROR)
 			QuitGifError(GifFileIn, GifFileOut);
 		}
-		/* Close the extension with a 0 length data block */
-		if (EGifPutExtensionBlock(GifFileOut, 0, NULL) == GIF_ERROR)
-			QuitGifError(GifFileIn, GifFileOut);
 		break;
 	    case TERMINATE_RECORD_TYPE:
 		break;
@@ -173,6 +175,8 @@ void main(int argc, char **argv)
 	QuitGifError(GifFileIn, GifFileOut);
     if (EGifCloseFile(GifFileOut) == GIF_ERROR)
 	QuitGifError(GifFileIn, GifFileOut);
+
+    return 0;
 }
 
 /******************************************************************************
@@ -269,5 +273,5 @@ static void QuitGifError(GifFileType *GifFileIn, GifFileType *GifFileOut)
     PrintGifError();
     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
-    exit(1);
+    exit(EXIT_FAILURE);
 }

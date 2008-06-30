@@ -1,6 +1,6 @@
 /*
  * Skeleton file for generic GIF `sponge' program --- slurp a GIF into core,
- * operate on it, spew it out again.  Most of the junk above `void main' isn't
+ * operate on it, spew it out again.  Most of the junk above `int main' isn't
  * needed for the skeleton, but is likely to be for what you'll do with it.
  *
  * If you compile this, it will turn into an expensive GIF copying routine;
@@ -16,18 +16,25 @@
  *					Eric S. Raymond
  *					esr@snark.thyrsus.com
  */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <dos.h>
 #include <alloc.h>
-#include <stdlib.h>
 #include <graphics.h>
 #include <io.h>
 #endif /* __MSDOS__ */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#include "gagetarg.h"
+#endif /* HAVE_FCNTL_H */
+#include "getarg.h"
 #include "gif_lib.h"
 
 #define PROGRAM_NAME	"gifspnge"
@@ -37,7 +44,7 @@ extern unsigned int
     _stklen = 16384;			     /* Increase default stack size. */
 #endif /* __MSDOS__ */
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	i;
     GifFileType *GifFileIn, *GifFileOut = (GifFileType *)NULL;
@@ -47,7 +54,7 @@ void main(int argc, char **argv)
 	|| ((GifFileOut = EGifOpenFileHandle(1)) == (GifFileType *)NULL))
     {
 	PrintGifError();
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     /*
@@ -62,7 +69,6 @@ void main(int argc, char **argv)
 				 GifFileIn->SColorMap->ColorCount,
 				 GifFileIn->SColorMap->Colors);
 
-
     for (i = 0; i < GifFileIn->ImageCount; i++)
 	(void) MakeSavedImage(GifFileOut, &GifFileIn->SavedImages[i]);
 
@@ -74,11 +80,12 @@ void main(int argc, char **argv)
      * data; it's *your* responsibility to keep your changes consistent.
      * Caveat hacker!
      */
-
     if (EGifSpew(GifFileOut) == GIF_ERROR)
 	PrintGifError();
     else if (DGifCloseFile(GifFileIn) == GIF_ERROR)
 	PrintGifError();
+
+    return 0;
 }
 
 /* gifspnge.c ends here */

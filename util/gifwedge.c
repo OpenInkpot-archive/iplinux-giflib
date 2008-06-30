@@ -16,16 +16,23 @@
 * 4 Jan 90 - Version 1.0 by Gershon Elber.				     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <stdlib.h>
 #include <alloc.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"GifWedge"
 
@@ -69,7 +76,7 @@ static void QuitGifError(GifFileType *GifFile);
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	i, j, l, c, Error, LevelStep, LogNumLevels,
 	Count = 0, LevelsFlag = FALSE, SizeFlag = FALSE, HelpFlag = FALSE;
@@ -83,13 +90,13 @@ void main(int argc, char **argv)
 		&HelpFlag)) != FALSE) {
 	GAPrintErrMsg(Error);
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     /* Make sure the number of levels is power of 2 (up to 32 levels.). */
@@ -154,6 +161,8 @@ void main(int argc, char **argv)
 
     if (EGifCloseFile(GifFile) == GIF_ERROR)
 	QuitGifError(GifFile);
+
+    return 0;
 }
 
 /******************************************************************************
@@ -163,5 +172,5 @@ static void QuitGifError(GifFileType *GifFile)
 {
     PrintGifError();
     if (GifFile != NULL) DGifCloseFile(GifFile);
-    exit(1);
+    exit(EXIT_FAILURE);
 }

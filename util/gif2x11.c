@@ -16,6 +16,10 @@
 *		xgif program by John Bradley, bradley@cis.ipenn.edu.	     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <graphics.h>
 #include <stdlib.h>
@@ -25,16 +29,23 @@
 #include <bios.h>
 #endif /* __MSDOS__ */
 
+#ifdef HAVE_LIBX11
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
+#endif /* HAVE_LIBX11 */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif /* HAVE_FCNTL_H */
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"Gif2X11"
 
@@ -87,7 +98,7 @@ static ColorMapObject
 /* it when forming the image bitmap in X format.			     */
 /* Note the table has 256 entry which is the maximum allowed in GIF format.  */
 static XColor XColorTable[256];
-static long XPixelTable[256];
+static unsigned long XPixelTable[256];
 static Display *XDisplay;
 static int XScreen;
 static Window Xroot, XImageWndw;
@@ -98,6 +109,7 @@ static XImage *XImageBuffer;
 static Pixmap XIcon;
 static Cursor XCursor;
 
+
 static void Screen2X(int argc, char **argv, GifRowType *ScreenBuffer,
 		     int ScreenWidth, int ScreenHeight);
 static void AllocateColors1(void);
@@ -106,7 +118,7 @@ static void AllocateColors2(void);
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	i, j, Error, NumFiles, ImageNum = 0, Size, Row, Col, Width, Height,
         ExtCode, Count;
@@ -126,19 +138,19 @@ void main(int argc, char **argv)
 	else if (NumFiles > 1)
 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     if (NumFiles == 1) {
 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
     else {
@@ -149,7 +161,7 @@ void main(int argc, char **argv)
 #endif /* __MSDOS__ */
 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
@@ -191,13 +203,13 @@ void main(int argc, char **argv)
     do {
 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
 	switch (RecordType) {
 	    case IMAGE_DESC_RECORD_TYPE:
 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
 		    PrintGifError();
-		    exit(-1);
+		    exit(EXIT_FAILURE);
 		}
 		Row = GifFile->Image.Top; /* Image Position relative to Screen. */
 		Col = GifFile->Image.Left;
@@ -207,8 +219,8 @@ void main(int argc, char **argv)
 		    PROGRAM_NAME, ++ImageNum, Col, Row, Width, Height);
 		if (GifFile->Image.Left + GifFile->Image.Width > GifFile->SWidth ||
 		   GifFile->Image.Top + GifFile->Image.Height > GifFile->SHeight) {
-		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n");
-		    exit(-2);
+		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n",ImageNum);
+		    exit(EXIT_FAILURE);
 		}
 		if (GifFile->Image.Interlace) {
 		    /* Need to perform 4 passes on the images: */
@@ -219,7 +231,7 @@ void main(int argc, char **argv)
 			    if (DGifGetLine(GifFile, &ScreenBuffer[j][Col],
 				Width) == GIF_ERROR) {
 				PrintGifError();
-				exit(-1);
+				exit(EXIT_FAILURE);
 			    }
 			}
 		}
@@ -229,7 +241,7 @@ void main(int argc, char **argv)
 			if (DGifGetLine(GifFile, &ScreenBuffer[Row++][Col],
 				Width) == GIF_ERROR) {
 			    PrintGifError();
-			    exit(-1);
+			    exit(EXIT_FAILURE);
 			}
 		    }
 		}
@@ -238,12 +250,12 @@ void main(int argc, char **argv)
 		/* Skip any extension blocks in file: */
 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
 		    PrintGifError();
-		    exit(-1);
+		    exit(EXIT_FAILURE);
 		}
 		while (Extension != NULL) {
 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
 			PrintGifError();
-			exit(-1);
+			exit(EXIT_FAILURE);
 		    }
 		}
 		break;
@@ -263,11 +275,23 @@ void main(int argc, char **argv)
     ColorMapSize = ColorMap->ColorCount;
     Screen2X(argc, argv, ScreenBuffer, GifFile->SWidth, GifFile->SHeight);
 
+    for (i = GifFile->SHeight - 1 ; i >= 0 ; i--) {
+	free( ScreenBuffer[ i ] );
+    }
+    free( ScreenBuffer );
+    if ( XImageBuffer != (XImage *) NULL )
+	XDestroyImage( XImageBuffer );
+
+    if ( XIcon )
+	XFreePixmap( XDisplay , XIcon );
+
     if (DGifCloseFile(GifFile) == GIF_ERROR) {
 	PrintGifError();
-	exit(-1);
+	exit(EXIT_FAILURE);
     }
     GifQprintf("\n");
+
+	return 0 ;
 }
 
 /******************************************************************************
@@ -276,14 +300,15 @@ void main(int argc, char **argv)
 static void Screen2X(int argc, char **argv, GifRowType *ScreenBuffer,
 		     int ScreenWidth, int ScreenHeight)
 {
+#define	WM_DELETE_WINDOW	"WM_DELETE_WINDOW"
+
+	Status	rc ;
+	Atom	atomKill ;
+
     int i, j, c, Size, x, y,
         MinIntensity, MaxIntensity, AvgIntensity, IconSizeX, IconSizeY;
     char *XImageData, *XIconData, KeyBuffer[81];
-    double Aspect;
-    GifByteType *OutLine, Data;
     unsigned long ValueMask;
-    GifPixelType *Line;
-    GifRowType *DitherBuffer;
     GifColorType *ColorMapEntry = ColorMap->Colors;
     XSetWindowAttributes SetWinAttr;
     XSizeHints Hints;
@@ -363,6 +388,13 @@ static void Screen2X(int argc, char **argv, GifRowType *ScreenBuffer,
 			   argv, argc,
 			   &Hints);
 
+    free( XIconData );
+
+    atomKill = XInternAtom(XDisplay, WM_DELETE_WINDOW, False );
+    rc = XSetWMProtocols( XDisplay, XImageWndw , &atomKill , 1 );
+    if ( rc == 0 )
+	GIF_EXIT("Failed to trap WM_DELETE_WINDOW event" );
+
     XSelectInput(XDisplay, XImageWndw, ExposureMask | KeyPressMask);
 
     /* Set out own cursor: */
@@ -398,7 +430,11 @@ static void Screen2X(int argc, char **argv, GifRowType *ScreenBuffer,
 	        KEvent = (XKeyEvent *) &Event;
 		XLookupString(KEvent, KeyBuffer, 80, &KS, &Stat);
 		if (KeyBuffer[0] == 3) return;
+	/*	if (KeyBuffer[0] == 3) { free(XImageData ); return; }	made by XDestroyImage	*/
 		break;
+	    case ClientMessage :
+		if ( Event.xclient.data.l[0] == atomKill ) return ;
+		break ;
 	}
     }
 }
@@ -410,7 +446,7 @@ static void Screen2X(int argc, char **argv, GifRowType *ScreenBuffer,
 ******************************************************************************/
 static void AllocateColors1(void)
 {
-    int Strip, Msk, i, j;
+    int Strip, Msk, i;
     char Msg[80];
 
     for (i = 0; i < 256; i++)
@@ -512,7 +548,7 @@ static void AllocateColors2(void)
 	}
 	free(XOldColorTable);
 
-	sprintf(Msg, "Colors will be approximated (average error = %d).\n",
+	sprintf(Msg, "Colors will be approximated (average error = %ld).\n",
 		AvgDistance / Count);
 	GIF_MESSAGE(Msg);
     }

@@ -20,6 +20,10 @@
 * 25 Dec 89 - Add the -r flag for raw output.                                *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <stdlib.h>
 #include <alloc.h>
@@ -27,11 +31,14 @@
 #include <io.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"GifText"
 
@@ -70,7 +77,7 @@ static void PrintLZCodes(GifFileType *GifFile);
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int i, j, ExtCode, CodeSize, Error, NumFiles, Len,
 	ColorMapFlag = FALSE, EncodedFlag = FALSE, LZCodesFlag = FALSE,
@@ -91,20 +98,20 @@ void main(int argc, char **argv)
 	else if (NumFiles > 1)
 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     if (NumFiles == 1) {
 	GifFileName = *FileName;
 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
     else {
@@ -112,7 +119,7 @@ void main(int argc, char **argv)
 	GifFileName = "Stdin";
 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
@@ -152,13 +159,13 @@ void main(int argc, char **argv)
     do {
 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
 	switch (RecordType) {
 	    case IMAGE_DESC_RECORD_TYPE:
 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
 		    PrintGifError();
-		    exit(-1);
+		    exit(EXIT_FAILURE);
 		}
 		if (!RawFlag) {
 		    printf("\nImage #%d:\n\n\tImage Size - Left = %d, Top = %d, Width = %d, Height = %d.\n",
@@ -193,7 +200,7 @@ void main(int argc, char **argv)
 		if (EncodedFlag) {
 		    if (DGifGetCode(GifFile, &CodeSize, &CodeBlock) == GIF_ERROR) {
 			PrintGifError();
-			exit(-1);
+			exit(EXIT_FAILURE);
 		    }
 		    printf("\nImage LZ compressed Codes (Code Size = %d):\n",
 			   CodeSize);
@@ -201,7 +208,7 @@ void main(int argc, char **argv)
 		    while (CodeBlock != NULL) {
 			if (DGifGetCodeNext(GifFile, &CodeBlock) == GIF_ERROR) {
 			    PrintGifError();
-			    exit(-1);
+			    exit(EXIT_FAILURE);
 			}
 			PrintCodeBlock(GifFile, CodeBlock, FALSE);
 		    }
@@ -216,7 +223,7 @@ void main(int argc, char **argv)
 			if (DGifGetLine(GifFile, Line, GifFile->Image.Width)
 			    == GIF_ERROR) {
 			    PrintGifError();
-			    exit(-1);
+			    exit(EXIT_FAILURE);
 			}
 			PrintPixelBlock(Line, GifFile->Image.Width, i == 0);
 		    }
@@ -230,7 +237,7 @@ void main(int argc, char **argv)
 			if (DGifGetLine(GifFile, Line, GifFile->Image.Width)
 			    == GIF_ERROR) {
 			    PrintGifError();
-			    exit(-1);
+			    exit(EXIT_FAILURE);
 			}
 			fwrite(Line, 1, GifFile->Image.Width, stdout);
 		    }
@@ -240,12 +247,12 @@ void main(int argc, char **argv)
 		    /* Skip the image: */
 		    if (DGifGetCode(GifFile, &CodeSize, &CodeBlock) == GIF_ERROR) {
 			PrintGifError();
-			exit(-1);
+			exit(EXIT_FAILURE);
 		    }
 		    while (CodeBlock != NULL) {
 			if (DGifGetCodeNext(GifFile, &CodeBlock) == GIF_ERROR) {
 			    PrintGifError();
-			    exit(-1);
+			    exit(EXIT_FAILURE);
 			}
 		    }
 
@@ -254,7 +261,7 @@ void main(int argc, char **argv)
 	    case EXTENSION_RECORD_TYPE:
 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
 		    PrintGifError();
-		    exit(-1);
+		    exit(EXIT_FAILURE);
 		}
 		if (!RawFlag) {
 		    putchar('\n');
@@ -283,7 +290,7 @@ void main(int argc, char **argv)
 		for (;;) {
 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
 			PrintGifError();
-			exit(-1);
+			exit(EXIT_FAILURE);
 		    }
 		    if (Extension == NULL)
 			break;
@@ -300,10 +307,12 @@ void main(int argc, char **argv)
 
     if (DGifCloseFile(GifFile) == GIF_ERROR) {
 	PrintGifError();
-	exit(-1);
+	exit(EXIT_FAILURE);
     }
 
     if (!RawFlag) printf("\nGif file terminated normally.\n");
+
+    return 0;
 }
 
 /******************************************************************************
@@ -315,7 +324,6 @@ static void PrintCodeBlock(GifFileType *GifFile, GifByteType *CodeBlock, int Res
 {
     static int CrntPlace = 0, Print = TRUE;
     static long CodeCount = 0;
-    char c;
     int i, Percent, Len;
     long NumBytes;
 
@@ -365,7 +373,6 @@ static void PrintExtBlock(GifByteType *Extension, int Reset)
     static int CrntPlace = 0, Print = TRUE;
     static long ExtCount = 0;
     static char HexForm[49], AsciiForm[17];
-    char c;
     int i, Len;
 
     if (Reset || Extension == NULL) {
@@ -415,7 +422,6 @@ static void PrintPixelBlock(GifByteType *PixelBlock, int Len, int Reset)
     static int CrntPlace = 0, Print = TRUE;
     static long ExtCount = 0;
     static char HexForm[49], AsciiForm[17];
-    char c;
     int i;
 
     if (Reset || PixelBlock == NULL) {
@@ -459,7 +465,6 @@ static void PrintPixelBlock(GifByteType *PixelBlock, int Len, int Reset)
 ******************************************************************************/
 static void PrintLZCodes(GifFileType *GifFile)
 {
-    char c;
     int Code, Print = TRUE, CrntPlace = 0;
     long CodeCount = 0;
 
@@ -467,7 +472,7 @@ static void PrintLZCodes(GifFileType *GifFile)
 	if (Print && CrntPlace == 0) printf("\n%05lx:", CodeCount);
 	if (DGifGetLZCodes(GifFile, &Code) == GIF_ERROR) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
 	if (Print && Code >= 0)
 	    printf(" %03x", Code);	      /* EOF Code is returned as -1. */

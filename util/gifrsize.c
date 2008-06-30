@@ -18,16 +18,23 @@
 * 3 Aug 91 - make it scale by an arbitrary size value.			     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <stdlib.h>
 #include <alloc.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"GifRSize"
 
@@ -75,7 +82,7 @@ static void QuitGifError(GifFileType *GifFileIn, GifFileType *GifFileOut);
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	i, iy, last_iy, l, t, w, h, Error, NumFiles, ExtCode,
 	ImageNum = 0,
@@ -102,13 +109,13 @@ void main(int argc, char **argv)
 	else if (NumFiles > 1)
 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     /* If specific direction was set, set other direction to 1: */
@@ -120,13 +127,13 @@ void main(int argc, char **argv)
     if (!YScaleFlag && ScaleFlag) YScale = Scale;
 
     if (XScale > MAX_SCALE) {
-	sprintf(s, "XScale too big, maximum scale selected instead (%d).",
+	sprintf(s, "XScale too big, maximum scale selected instead (%f).",
 								MAX_SCALE);
 	GIF_MESSAGE(s);
 	XScale = MAX_SCALE;
     }
     if (YScale > MAX_SCALE) {
-	sprintf(s, "YScale too big, maximum scale selected instead (%d).",
+	sprintf(s, "YScale too big, maximum scale selected instead (%f).",
 								MAX_SCALE);
 	GIF_MESSAGE(s);
 	YScale = MAX_SCALE;
@@ -238,23 +245,18 @@ void main(int argc, char **argv)
 		}
 		break;
 	    case EXTENSION_RECORD_TYPE:
-		/* Copy the extension header */
+		/* Skip any extension blocks in file: */
 		if (DGifGetExtension(GifFileIn, &ExtCode, &Extension) == GIF_ERROR)
 		    QuitGifError(GifFileIn, GifFileOut);
-		if (EGifPutExtensionHeader(GifFileOut, ExtCode) == GIF_ERROR)
+		if (EGifPutExtension(GifFileOut, ExtCode, Extension[0],
+							Extension) == GIF_ERROR)
 		    QuitGifError(GifFileIn, GifFileOut);
 
-		/* Copy the extension data blocks */
+		/* No support to more than one extension blocks, so discard: */
 		while (Extension != NULL) {
-		    if (EGifPutExtensionBlock(GifFileOut, Extension[0],
-			Extension+1) == GIF_ERROR)
-			    QuitGifError(GifFileIn, GifFileOut);
 		    if (DGifGetExtensionNext(GifFileIn, &Extension) == GIF_ERROR)
 			QuitGifError(GifFileIn, GifFileOut);
 		}
-		/* Close the extension with a 0 length data block */
-		if (EGifPutExtensionBlock(GifFileOut, 0, NULL) == GIF_ERROR)
-			QuitGifError(GifFileIn, GifFileOut);
 		break;
 	    case TERMINATE_RECORD_TYPE:
 		break;
@@ -271,6 +273,8 @@ void main(int argc, char **argv)
 
     free(LineOut);
     free(LineIn);
+
+    return 0;
 }
 
 /******************************************************************************
@@ -307,5 +311,5 @@ static void QuitGifError(GifFileType *GifFileIn, GifFileType *GifFileOut)
     PrintGifError();
     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
-    exit(1);
+    exit(EXIT_FAILURE);
 }

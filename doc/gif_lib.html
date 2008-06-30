@@ -12,6 +12,7 @@ Go to <a href="index.html">index page</a>.
 <CENTER><BLOCKQUOTE>
 Gershon Elber, May 1991<BR>
 Eric S. Raymond, Sep 1992<BR>
+Toshio Kuratomi, May 2004<br>
 </BLOCKQUOTE></CENTER>
 
 The Graphics Interchange Format(c) is the Copyright property of
@@ -101,7 +102,7 @@ went wrong, GIF_OK otherwise.  After an error return, the code in the
 gif_err.c module can be used to do something about it.<P>
 
 In addition, a module to parse command line arguments is supplied.
-This module is called getarg.c and its headers are in gagetarg.h.  See the header
+This module is called getarg.c and its headers are in getarg.h.  See the header
 of getarg.c for details on its usage.<P>
 
 <H1>Decoding (dgif_lib.c)</H1>
@@ -415,35 +416,65 @@ int EGifPutExtension(
 
 Dumps the given extension block into the GIF file. Extension blocks
 are optional in GIF file. Extension blocks of more than 255 bytes or
-more than one block are not supported.<P>
+more than one block are not supported in this function.  Please use
+EGifPutExtensionFirst, EGifPutExtensionNext, and EGifPutExtensionLast
+if your extension blocks may fall into this category.<P>
 
 Returns GIF_ERROR if something went wrong, GIF_OK otherwise.<P>
 
 <pre><code>
-int EGifPutExtensionHeader(
-        GifFileType *GifFile,
-        int GifExtCode)
-</code></pre>
-
-Dumps the given extension block header to the GIF file. This must be
-used in combination with EGifPutExtensionBlock to create a valid
-Extension.  Using these two functions it is possible to create an
-extension with any number of sub-blocks.<P>
-
-Returns GIF_ERROR if something went wrong, GIF_OK otherwise.<P>
-
-<pre><code>
-int EGifPutExtensionBlock(
-        GifFileType *GifFile,
+int EGifPutExtensionFirst(
+        GifFileType * GifFile,
+        int GifExtCode,
         int GifExtLen,
-        void *GifExtension)
+        const VoidPtr GifExtension)
 </code></pre>
+Dumps the beginning of a GIF extension block to a GIF file.  Extension blocks
+are optional in GIF files.  This function outputs the meta information
+necessary to a GIF extension block and the extension data described in the
+GifExtension argument.<P>
 
-Dumps the given extension sub-block into the GIF file. Extension 
-sub-blocks are limited to 255 bytes in length, but extensions which
-allow multiple sub-blocks are not limited in their total length.
-Extension blocks created this way must be terminated with a 0 length
-sub-block.<P>
+Further blocks of the GIF Extension should be dumped using
+EGifPutExtensionNext.  When finished with this extension block,
+EGifPutExtensionLast should be called to output the block termination.<P>
+
+Returns GIF_ERROR if something went wrong, GIF_OK otherwise.<P>
+
+<pre><code>
+int EGifPutExtensionNext(
+        GifFileType * GifFile,
+        int GifExtCode,
+        int GifExtLen,
+        const VoidPtr GifExtension)
+</code></pre>
+Dumps a subblock of a GIF extension to a GIF File.  Extension blocks are
+optional in GIF files.  This function will write the Extension Data in
+GifExtension to the file as a subblock of the preceding Extension Block.
+Repeat calling of this function until all data subblocks have been output.<P>
+
+Note that EGifPutExtensionFirst needs to be called before any calls to this
+function.  EGifPutExtensionLast should be called to finish the Extension
+block after all data subblocks have been output.<P>
+
+Returns GIF_ERROR if something went wrong, GIF_OK otherwise.<P>
+
+<pre><code>
+int EGifPutExtensionLast(
+        GifFileType * GifFile,
+        int GifExtCode,
+        int GifExtLen,
+        const VoidPtr GifExtension)
+</code></pre>
+Dumps an optional GIF extension data subblock and the GIF extension block
+terminator to a GIF File.  Extension blocks are optional in GIF files.  This
+function will write the Extension Data in GifExtension to the file as a
+subblock of the preceding Extension Block.  Then it will output the GIF
+extension block terminator to end the current Extension block.  As a special
+case, if GifExtLen is zero, the function will assume there isn't another
+data block to output and will simply write the block terminator.<P>
+
+Note that a call to EGifPutExtensionFirst is needed to open the GIF
+Extension Block prior to calling this function.<P>
 
 Returns GIF_ERROR if something went wrong, GIF_OK otherwise.<P>
 
@@ -645,7 +676,7 @@ all parameters, parse the command line, and update the parameters.<P>
 The CtrlStr defines what types of variables should follow. Look at the
 beginning of getarg.c for exact usage.<P>
 
-Returns 0 if successful, error number (as defined by gagetarg.h) otherwise.<P>
+Returns 0 if successful, error number (as defined by getarg.h) otherwise.<P>
 
 <pre><code>
 void GAPrintErrMsg(int Error)

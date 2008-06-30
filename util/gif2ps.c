@@ -18,6 +18,10 @@
 * 22 Dec 89 - Version 1.0 by Gershon Elber.				     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <graphics.h>
 #include <stdlib.h>
@@ -27,12 +31,17 @@
 #include <bios.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif /* HAVE_FCNTL_H */
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"Gif2PS"
 
@@ -96,7 +105,7 @@ static void PutString(unsigned char *Line, int Len);
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	i, j, Error, NumFiles, Size, Row, Col, Width, Height, ExtCode, Count;
     GifRecordType RecordType;
@@ -116,13 +125,13 @@ void main(int argc, char **argv)
 	else if (NumFiles > 1)
 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     if (ForceXFlag)
@@ -135,7 +144,7 @@ void main(int argc, char **argv)
     if (NumFiles == 1) {
 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
     else {
@@ -146,7 +155,7 @@ void main(int argc, char **argv)
 #endif /* __MSDOS__ */
 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
@@ -177,13 +186,13 @@ void main(int argc, char **argv)
     do {
 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
 	    PrintGifError();
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
 	switch (RecordType) {
 	    case IMAGE_DESC_RECORD_TYPE:
 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
 		    PrintGifError();
-		    exit(-1);
+		    exit(EXIT_FAILURE);
 		}
 		Row = GifFile->Image.Top; /* Image Position relative to Screen. */
 		Col = GifFile->Image.Left;
@@ -193,8 +202,8 @@ void main(int argc, char **argv)
 		    PROGRAM_NAME, ++ImageNum, Col, Row, Width, Height);
 		if (GifFile->Image.Left + GifFile->Image.Width > GifFile->SWidth ||
 		   GifFile->Image.Top + GifFile->Image.Height > GifFile->SHeight) {
-		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n");
-		    exit(-2);
+		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n",ImageNum);
+		    exit(EXIT_FAILURE);
 		}
 		if (GifFile->Image.Interlace) {
 		    /* Need to perform 4 passes on the images: */
@@ -205,7 +214,7 @@ void main(int argc, char **argv)
 			    if (DGifGetLine(GifFile, &ScreenBuffer[j][Col],
 				Width) == GIF_ERROR) {
 				PrintGifError();
-				exit(-1);
+				exit(EXIT_FAILURE);
 			    }
 			}
 		}
@@ -215,7 +224,7 @@ void main(int argc, char **argv)
 			if (DGifGetLine(GifFile, &ScreenBuffer[Row++][Col],
 				Width) == GIF_ERROR) {
 			    PrintGifError();
-			    exit(-1);
+			    exit(EXIT_FAILURE);
 			}
 		    }
 		}
@@ -224,12 +233,12 @@ void main(int argc, char **argv)
 		/* Skip any extension blocks in file: */
 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
 		    PrintGifError();
-		    exit(-1);
+		    exit(EXIT_FAILURE);
 		}
 		while (Extension != NULL) {
 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
 			PrintGifError();
-			exit(-1);
+			exit(EXIT_FAILURE);
 		    }
 		}
 		break;
@@ -250,8 +259,10 @@ void main(int argc, char **argv)
 
     if (DGifCloseFile(GifFile) == GIF_ERROR) {
 	PrintGifError();
-	exit(-1);
+	exit(EXIT_FAILURE);
     }
+
+    return 0;
 }
 
 /******************************************************************************
@@ -267,12 +278,13 @@ static void DumpScreen2PS(GifRowType *ScreenBuffer,
     GifColorType *ColorMapEntry;
 
     /* If user did not enforce orientation, pick the best one. */
-    if (PSOrientation == UNKNOWN_ORIENT)
-	if (ScreenWidth > ScreenHeight)
+    if (PSOrientation == UNKNOWN_ORIENT) {
+	if (ScreenWidth > ScreenHeight) {
 	    PSOrientation = VERTICAL_ORIENT;
-	else
+    } else {
 	    PSOrientation = HORIZONTAL_ORIENT;
-
+    }
+    }
     Aspect = ((double) ScreenHeight) / ((double) ScreenWidth);
 
     if (!SizeFlag)
@@ -333,13 +345,13 @@ static void DumpScreen2PS(GifRowType *ScreenBuffer,
     printf("} def\n");
     switch (PSOrientation) {
         case HORIZONTAL_ORIENT:
-	    printf("%lf %lf translate\n", PSPosX, PSPosY);
-	    printf("%lf %lf scale\n", PSSizeX, PSSizeY);
+	    printf("%f %f translate\n", PSPosX, PSPosY);
+	    printf("%f %f scale\n", PSSizeX, PSSizeY);
 	    break;
 	case VERTICAL_ORIENT:
-	    printf("%lf %lf translate\n", PSPosX + PSSizeX, PSPosY);
+	    printf("%f %f translate\n", PSPosX + PSSizeX, PSPosY);
 	    printf("90 rotate\n");
-	    printf("%lf %lf scale\n", PSSizeY, PSSizeX);
+	    printf("%f %f scale\n", PSSizeY, PSSizeX);
 	    break;
     }
     printf("drawimage\n");
@@ -374,7 +386,7 @@ static void DumpScreen2PS(GifRowType *ScreenBuffer,
 static void PutString(unsigned char *Line, int Len)
 {
     int i;
-    static Counter = 0;
+    static int Counter = 0;
     static char *Hex = "0123456789ABCDEF";
 
     for (i = 0; i < Len; i++) {

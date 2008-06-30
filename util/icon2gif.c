@@ -9,6 +9,10 @@
 * 15 Sep 92 - Version 1.0 by Eric Raymond.				     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <dos.h>
 #include <alloc.h>
@@ -17,10 +21,14 @@
 #include <io.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include "gif_lib.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"icon2gif"
 
@@ -54,9 +62,12 @@ static char KeyLetters[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP
 
 static int HandleGifError(GifFileType *GifFile);
 static void QuitGifError(GifFileType *GifFileIn, GifFileType *GifFileOut);
+#if FALSE
+/* Apparently this is an unimplemented function of the program */
 static int MergeImage(GifFileType *BaseFile,
 		       GifFileType *Inclusion,
 		      SavedImage *NewImage);
+#endif
 static void Icon2Gif(char *FileName, FILE *txtin, int fdout);
 static void Gif2Icon(char *FileName,
 		     int fdin, int fdout,
@@ -67,11 +78,11 @@ static int EscapeString(char *cp, char *tp);
 /******************************************************************************
 * Main Sequence 							      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int	i, Error, NumFiles,
 	DisasmFlag = FALSE, HelpFlag = FALSE, TextLineFlag = FALSE;
-    char *NameTable, **FileNames = NULL, *OutFileName;
+    char **FileNames = NULL;
     char *TextLines[1];
 
     if ((Error = GAGetArgs(argc, argv, CtrlStr,
@@ -79,25 +90,25 @@ void main(int argc, char **argv)
 		&HelpFlag, &NumFiles, &FileNames)) != FALSE) {
 	GAPrintErrMsg(Error);
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     if (!DisasmFlag && NumFiles > 1) {
 	GIF_MESSAGE("Error in command line parsing - one  text input please.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (!DisasmFlag && TextLineFlag) {
 	GIF_MESSAGE("Error in command line parsing - -t invalid without -d.");
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
 
@@ -116,7 +127,7 @@ void main(int argc, char **argv)
 	    if ((fp = fopen(FileNames[i], "r")) == (FILE *)NULL)
 	    {
 		(void) fprintf(stderr, "Can't open %s\n", FileNames[i]);
-		exit(2);
+		exit(EXIT_FAILURE);
 	    }
 
 	    if (DisasmFlag)
@@ -131,6 +142,8 @@ void main(int argc, char **argv)
 
 	    (void) fclose(fp);
 	}
+
+    return 0;
 }
 
 /******************************************************************************
@@ -140,11 +153,12 @@ void main(int argc, char **argv)
 
 static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 {
-    int	ExtCode, ColorMapSize = 0;
+    unsigned int	ExtCode, ColorMapSize = 0;
     GifColorType GlobalColorMap[256], LocalColorMap[256],
 	*ColorMap = GlobalColorMap;
     char GlobalColorKeys[PRINTABLES], LocalColorKeys[PRINTABLES],
 	*KeyTable = GlobalColorKeys;
+    int red, green, blue;
 
     char buf[BUFSIZ * 2], InclusionFile[64];
     GifFileType *GifFileOut;
@@ -165,7 +179,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 	/*
 	 * Skip lines consisting only of whitespace and comments
 	 */
-	for (cp = buf; isspace(*cp); cp++)
+	for (cp = buf; isspace((int)(*cp)); cp++)
 	    continue;
 	if (*cp == '#' || *cp == '\0')
 	    continue;
@@ -176,7 +190,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 	 */
 	if ((cp = strchr(buf, '#')) && (cp == strrchr(cp, '#')))
 	{
-	    while (isspace(*--cp))
+	    while (isspace((int)(*--cp)))
 		continue;
 	    *++cp = '\n';
 	    *++cp = '\0';
@@ -199,7 +213,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 	    if (n > 256 || n < 0 || n != (1 << ResBits))
 	    {
 		PARSE_ERROR("Invalid color resolution value.");
-		exit(1);
+		exit(EXIT_FAILURE);
 	    }
 
 	    GifFileOut->SColorResolution = ResBits;
@@ -220,7 +234,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 	    if (GifFileOut->SColorMap != NULL)
 	    {
 		PARSE_ERROR("You've already declared a global color map.");
-		exit(1);
+		exit(EXIT_FAILURE);
 	    }
 
 	    ColorMapSize = 0;
@@ -234,7 +248,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 	    if (NewImage == NULL)
 	    {
 		PARSE_ERROR("No previous image declaration.");
-		exit(1);
+		exit(EXIT_FAILURE);
 	    }
 
 	    ColorMapSize = 0;
@@ -244,11 +258,11 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 	}
 
 	else if (sscanf(buf, "	rgb %d %d %d is %c",
-		   &ColorMap[ColorMapSize].Red,
-		   &ColorMap[ColorMapSize].Green,
-		   &ColorMap[ColorMapSize].Blue,
-		   &KeyTable[ColorMapSize]) == 4)
+		   &red, &green, &blue, &KeyTable[ColorMapSize]) == 4)
 	{
+	    ColorMap[ColorMapSize].Red = red;
+	    ColorMap[ColorMapSize].Green = green;
+	    ColorMap[ColorMapSize].Blue = blue;
 	    ColorMapSize++;
 	}
 
@@ -261,7 +275,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 	    if (NewMap == (ColorMapObject *)NULL)
 	    {
 		PARSE_ERROR("Out of memory while allocating new color map.");
-		exit(1);
+		exit(EXIT_FAILURE);
 	    }
 
 	    if (NewImage)
@@ -283,10 +297,10 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 		|| DGifSlurp(Inclusion) == GIF_ERROR)
 	    {
 		PARSE_ERROR("Inclusion read failed.");
-		exit(1);
+        QuitGifError(Inclusion, GifFileOut);
 	    }
 
-	    if (DoTranslation = (GifFileOut->SColorMap!=(ColorMapObject*)NULL))
+	    if ((DoTranslation = (GifFileOut->SColorMap!=(ColorMapObject*)NULL)))
 	    {
 		ColorMapObject	*UnionMap;
 
@@ -296,7 +310,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 		if (UnionMap == NULL)
 		{
 		    PARSE_ERROR("Inclusion failed --- global map conflict.");
-		    exit(1);
+            QuitGifError(Inclusion, GifFileOut);
 		}
 
 		FreeMapObject(GifFileOut->SColorMap);
@@ -310,7 +324,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 		if ((NewImage = MakeSavedImage(GifFileOut, CopyFrom)) == NULL)
 		{
 		    PARSE_ERROR("Inclusion failed --- out of memory.");
-		    exit(1);
+            QuitGifError(Inclusion, GifFileOut);
 		}
 		else if (DoTranslation)
 		    ApplyTranslation(NewImage, Translation);
@@ -335,7 +349,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 	    if ((NewImage = MakeSavedImage(GifFileOut, NULL)) == (SavedImage *)NULL)
 	    {
 		PARSE_ERROR("Out of memory while allocating image block.");
-		exit(1);
+		exit(EXIT_FAILURE);
 	    }
 
 	    /* use global table unless user specifies a local one */
@@ -351,7 +365,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 	{
 	    (void) fputs(buf, stderr);
 	    PARSE_ERROR("Syntax error in header block.");
-	    exit(1);
+	    exit(EXIT_FAILURE);
 	}
 
 	/*
@@ -381,7 +395,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 	    if ((Raster = (GifPixelType *) malloc(sizeof(GifPixelType) * NewImage->ImageDesc.Width * NewImage->ImageDesc.Height))
 		== NULL) {
 		PARSE_ERROR("Failed to allocate raster block, aborted.");
-		exit(1);
+		exit(EXIT_FAILURE);
 	    }
 
 	    if (!GifQuietPrint)
@@ -398,7 +412,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 		for (j = 0; j < NewImage->ImageDesc.Width; j++)
 		    if ((c = fgetc(txtin)) == EOF) {
 			PARSE_ERROR("input file ended prematurely.");
-			exit(1);
+			exit(EXIT_FAILURE);
 		    }
 		    else if (c == '\n')
 		    {
@@ -407,11 +421,11 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 		    }
 		    else if (isspace(c))
 			--j;
-		    else if (dp = strchr(KeyTable, c))
+		    else if ((dp = strchr(KeyTable, c)))
 			*cp++ = (dp - KeyTable);
 		    else {
 			PARSE_ERROR("Invalid pixel value.");
-			exit(1);
+			exit(EXIT_FAILURE);
 		    }
 
 		if (!GifQuietPrint)
@@ -421,7 +435,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 	    if (!GifQuietPrint)
 		putc('\n', stderr);
 
-	    NewImage->RasterBits = Raster;
+	    NewImage->RasterBits = (unsigned char *) Raster;
 	}
 	else if (sscanf(buf, "comment"))
 	{
@@ -435,9 +449,9 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 
 		    buf[strlen(buf) - 1] = '\0';
 		    Len = EscapeString(buf, buf);
-		    if (AddExtensionBlock(NewImage, Len, buf) == GIF_ERROR) {
+		    if (AddExtensionBlock(NewImage, Len, (unsigned char *)buf) == GIF_ERROR) {
 			PARSE_ERROR("out of memory while adding comment block.");
-			exit(1);
+			exit(EXIT_FAILURE);
 		    }
 		}
 	}
@@ -453,9 +467,9 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 
 		    buf[strlen(buf) - 1] = '\0';
 		    Len = EscapeString(buf, buf);
-		    if (AddExtensionBlock(NewImage, Len, buf) == GIF_ERROR) {
+		    if (AddExtensionBlock(NewImage, Len, (unsigned char *)buf) == GIF_ERROR) {
 			PARSE_ERROR("out of memory while adding plaintext block.");
-			exit(1);
+			exit(EXIT_FAILURE);
 		    }
 		}
 	}
@@ -471,9 +485,9 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 
 		    buf[strlen(buf) - 1] = '\0';
 		    Len = EscapeString(buf, buf);
-		    if (AddExtensionBlock(NewImage, Len, buf) == GIF_ERROR) {
+		    if (AddExtensionBlock(NewImage, Len, (unsigned char *)buf) == GIF_ERROR) {
 			PARSE_ERROR("out of memory while adding extension block.");
-			exit(1);
+			exit(EXIT_FAILURE);
 		    }
 		}
 	}
@@ -481,7 +495,7 @@ static void Icon2Gif(char *FileName, FILE *txtin, int fdout)
 	{
 	    (void) fputs(buf, stderr);
 	    PARSE_ERROR("Syntax error in image description.");
-	    exit(1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
@@ -493,23 +507,23 @@ static void Gif2Icon(char *FileName,
 		     int fdin, int fdout,
 		     char NameTable[])
 {
-    int i, j, ExtCode, CodeSize, Len, ImageNum = 1;
+    int i, ExtCode, ImageNum = 1;
     GifPixelType *Line, *cp;
     GifRecordType RecordType;
-    GifByteType *CodeBlock, *Extension;
+    GifByteType *Extension;
     GifFileType *GifFile;
 
     if (fdin == -1) {
 	if ((GifFile = DGifOpenFileName(FileName)) == NULL) {
 	    PrintGifError();
-	    exit(1);
+	    exit(EXIT_FAILURE);
 	}
     }
     else {
 	/* Use stdin instead: */
 	if ((GifFile = DGifOpenFileHandle(fdin)) == NULL) {
 	    PrintGifError();
-	    exit(1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
@@ -527,7 +541,7 @@ static void Gif2Icon(char *FileName,
 	    (void) fprintf(stderr,
 			   "%s: global color map has unprintable pixels\n",
 			   FileName);
-	    exit(1);
+	    exit(EXIT_FAILURE);
 	}
 
 	printf("screen map\n");
@@ -544,13 +558,13 @@ static void Gif2Icon(char *FileName,
     do {
 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
 	    PrintGifError();
-	    exit(1);
+	    exit(EXIT_FAILURE);
 	}
 	switch (RecordType) {
 	case IMAGE_DESC_RECORD_TYPE:
 	    if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
 		PrintGifError();
-		exit(1);
+		exit(EXIT_FAILURE);
 	    }
 	    printf("image # %d\nimage left %d\nimage top %d\n",
 		   ImageNum++,
@@ -565,7 +579,7 @@ static void Gif2Icon(char *FileName,
 		    (void) fprintf(stderr,
 				   "%s: global color map has unprintable pixels\n",
 				   FileName);
-		    exit(1);
+		    exit(EXIT_FAILURE);
 		}
 
 		printf("image map\n");
@@ -588,7 +602,7 @@ static void Gif2Icon(char *FileName,
 		if (DGifGetLine(GifFile, Line, GifFile->Image.Width)
 		    == GIF_ERROR) {
 		    PrintGifError();
-		    exit(1);
+		    exit(EXIT_FAILURE);
 		}
 		for (cp = Line; cp < Line + GifFile->Image.Width; cp++)
 		    putchar(NameTable[*cp]);
@@ -601,7 +615,7 @@ static void Gif2Icon(char *FileName,
 	case EXTENSION_RECORD_TYPE:
 	    if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
 		PrintGifError();
-		exit(1);
+		exit(EXIT_FAILURE);
 	    }
 
 	    if (ExtCode == COMMENT_EXT_FUNC_CODE)
@@ -614,12 +628,12 @@ static void Gif2Icon(char *FileName,
 		printf("extension %02x\n", ExtCode);
 
 	    while (Extension != NULL) {
-		VisibleDumpBuffer(Extension + 1, Extension[0]);
+		VisibleDumpBuffer((char *)(Extension + 1), Extension[0]);
 		putchar('\n');
 
 		if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
 		    PrintGifError();
-		    exit(1);
+		    exit(EXIT_FAILURE);
 		}
 	    }
 	    printf("end\n\n");
@@ -647,7 +661,7 @@ static void Gif2Icon(char *FileName,
 
     if (DGifCloseFile(GifFile) == GIF_ERROR) {
 	PrintGifError();
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 }
 
@@ -708,7 +722,7 @@ static void VisibleDumpBuffer(char *buf, int len)
 
     for (cp = buf; cp < buf + len; cp++)
     {
-	if (isprint(*cp) || *cp == ' ')
+	if (isprint((int)(*cp)) || *cp == ' ')
 	    putchar(*cp);
 	else if (*cp == '\n')
 	{
@@ -752,5 +766,5 @@ static void QuitGifError(GifFileType *GifFileIn, GifFileType *GifFileOut)
     PrintGifError();
     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
-    exit(1);
+    exit(EXIT_FAILURE);
 }

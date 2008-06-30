@@ -19,16 +19,23 @@
 * 9 Jul 89 - Version 1.0 by Gershon Elber.				     *
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __MSDOS__
 #include <stdlib.h>
 #include <alloc.h>
 #endif /* __MSDOS__ */
 
+#ifndef __MSDOS__
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include "gif_lib.h"
-#include "gagetarg.h"
+#include "getarg.h"
 
 #define PROGRAM_NAME	"GifBG"
 
@@ -98,7 +105,7 @@ static void QuitGifError(GifFileType *GifFile);
 /******************************************************************************
 * Interpret the command line and scan the given GIF file.		      *
 ******************************************************************************/
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     unsigned int Ratio;
     int	i, j, l, LevelHeight, LevelWidth, Error, LogNumLevels, FlipDir,
@@ -119,13 +126,13 @@ void main(int argc, char **argv)
 		&HelpFlag)) != FALSE) {
 	GAPrintErrMsg(Error);
 	GAPrintHowTo(CtrlStr);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 
     if (HelpFlag) {
 	fprintf(stderr, VersionStr);
 	GAPrintHowTo(CtrlStr);
-	exit(0);
+	exit(EXIT_SUCCESS);
     }
 
     /* Make sure intensities are in the right range: */
@@ -349,6 +356,8 @@ void main(int argc, char **argv)
 
     if (EGifCloseFile(GifFile) == GIF_ERROR)
 	QuitGifError(GifFile);
+
+    return 0;
 }
 
 /******************************************************************************
@@ -358,5 +367,5 @@ static void QuitGifError(GifFileType *GifFile)
 {
     PrintGifError();
     if (GifFile != NULL) EGifCloseFile(GifFile);
-    exit(1);
+    exit(EXIT_FAILURE);
 }
