@@ -1,129 +1,84 @@
 #!/usr/bin/make -f
 
-i=$(shell pwd)/debian/tmp
-b=$(shell pwd)/debian/build
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
 
-build: Makefile build-debstamp
-build-debstamp:
-	@echo "--- Compiling"
+# These are used for cross-compiling and for saving the configure script
+# from having to guess our platform (since we know it already)
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+CFLAGS = -Wall -g
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -O2
+endif
+
+config.status: configure
 	dh_testdir
+
+	# Configure package
+	CFLAGS="$(CFLAGS)" ./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man
+
+build: build-stamp
+build-stamp: config.status
+	dh_testdir
+
+	# Building package
 	$(MAKE)
-	touch build-debstamp
+
+	touch build-stamp
 
 clean:
-	@echo "--- Cleaning"
-	dh_testdir
-	-rm -rf static shared
-	-rm -f build-debstamp install-debstamp
-	-make clean
-	-rm -f `find . -name "*~"`
-	-rm -rf `find . -name "\.deps"`
-	-rm -rf `find . -name "\.libs"`
-	-rm -rf debian/tmp `find debian/* -type d ! -name CVS` debian/files* core
-	-rm -f debian/*substvars
-
-install: install-debstamp build
-install-debstamp:
-	@echo "--- Installing"
 	dh_testdir
 	dh_testroot
+	rm -f build-stamp
+
+	# Cleaning package
+	-$(MAKE) distclean
+ifneq "$(wildcard /usr/share/misc/config.sub)" ""
+	cp -f /usr/share/misc/config.sub config.sub
+endif
+ifneq "$(wildcard /usr/share/misc/config.guess)" ""
+	cp -f /usr/share/misc/config.guess config.guess
+endif
+
 	dh_clean
-	rm -rf $(b)
-	mkdir -p debian/tmp/usr/lib
-	mkdir -p debian/tmp/usr/bin
-	mkdir -p debian/tmp/usr/include
-	cp lib/*.h debian/tmp/usr/include
-	mkdir -p debian/tmp/usr/share/doc/giflib3g/html
-	cp doc/*.txt debian/tmp/usr/share/doc/giflib3g
-	cp doc/*.html debian/tmp/usr/share/doc/giflib3g/html
-	make install DESTDIR=`pwd`/debian/tmp/
-	cd $(i)/usr/lib; \
-		ln -sf libgif.so.3.0 libgif.so ; \
-		ln -sf libgif.so.3.0 libgif.so.3 ; \
-		ln -sf libgif.so.3.0 libungif.so.3.0.0 ; \
-		ln -sf libgif.so.3.0 libungif.so.3 ; \
-		ln -sf libgif.so.3.0 libungif.so ; \
-		ln -sf libgif.a libungif.a
-	touch install-debstamp
 
-install-save: install
-	rm -rf $(i).saved
-	cp -a $(i) $(i).saved
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
 
-install-saved:
-	rm -rf $(i)
-	cp -a $(i).saved $(i)
-	rm -rf $(b)
-	touch install-debstamp
+	# Installing package
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
+
+	# Installing documentation
+	mkdir -p debian/giflib-tools/usr/share/doc/giflib-tools/html
+	cp -a doc/*.txt debian/giflib-tools/usr/share/doc/giflib-tools/
+	cp -a doc/*.html debian/giflib-tools/usr/share/doc/giflib-tools/html
 
 binary-indep: build install
 
-binary-arch: build install \
-		giflib3g \
-		giflib3g-dev \
-		giflib-bin
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs ChangeLog
+	dh_installdocs
+	dh_install --sourcedir=debian/tmp
+	dh_link
+	dh_strip --dbg-package=giflib-dbg
+	dh_compress
+	dh_fixperms
+	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
 
-#
-# giflib3g
-#
-
-giflib3g: install
-	@echo "--- Building: $@"
-	dh_installdocs       -p$@ -P$(b)/$@ \
-				READ.ME NEWS
-	dh_installchangelogs -p$@ -P$(b)/$@ 
-	dh_movefiles         -p$@ -P$(b)/$@
-	dh_strip             -p$@ -P$(b)/$@ 
-	dh_compress          -p$@ -P$(b)/$@ 
-	dh_fixperms          -p$@ -P$(b)/$@ 
-	dh_installdeb        -p$@ -P$(b)/$@
-	dh_shlibdeps         -p$@ -P$(b)/$@
-	dh_gencontrol        -p$@ -P$(b)/$@
-	dh_makeshlibs        -p$@ -P$(b)/$@ -V 'libungif3g (>= 3.0-2) | giflib3g (>= 3.0-5.2)'
-	dh_md5sums           -p$@ -P$(b)/$@
-	dh_builddeb          -p$@ -P$(b)/$@
-
-#
-# giflib3g-dev
-#
-
-giflib3g-dev: install
-	@echo "--- Building: $@"
-	mkdir -p $(b)/$@/usr/share/doc
-	cd $(b)/$@/usr/share/doc; ln -s giflib3g $@
-	dh_movefiles         -p$@ -P$(b)/$@
-	dh_strip             -p$@ -P$(b)/$@ 
-	dh_compress          -p$@ -P$(b)/$@ 
-	dh_fixperms          -p$@ -P$(b)/$@ 
-	dh_installdeb        -p$@ -P$(b)/$@
-	dh_shlibdeps         -p$@ -P$(b)/$@
-	dh_gencontrol        -p$@ -P$(b)/$@
-	dh_md5sums           -p$@ -P$(b)/$@
-	dh_builddeb          -p$@ -P$(b)/$@
-
-#
-# giflib-bin
-#
-
-giflib-bin: install
-	@echo "--- Building: $@"
-	mkdir -p $(b)/$@/usr/share/doc
-	cd $(b)/$@/usr/share/doc; ln -s giflib3g $@
-	dh_movefiles         -p$@ -P$(b)/$@
-	dh_strip             -p$@ -P$(b)/$@ 
-	dh_compress          -p$@ -P$(b)/$@ 
-	dh_fixperms          -p$@ -P$(b)/$@ 
-	dh_installdeb        -p$@ -P$(b)/$@
-	dh_shlibdeps         -p$@ -P$(b)/$@
-	dh_gencontrol        -p$@ -P$(b)/$@
-	dh_undocumented	     -p$@ -P$(b)/$@ \
-	 `ls $(b)/$@/usr/bin/* | sed "s,^.*/\(.*\)$$,\1.1,"`
-	dh_md5sums           -p$@ -P$(b)/$@
-	dh_builddeb          -p$@ -P$(b)/$@
-
-
- 
 binary: binary-indep binary-arch
-
-.PHONY: binary clean binary-indep binary-arch build install install-save install-saved
-
+.PHONY: build clean binary-indep binary-arch binary install

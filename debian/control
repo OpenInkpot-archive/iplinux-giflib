@@ -1,36 +1,53 @@
 Source: giflib
 Section: libs
-Priority: extra
-Maintainer: Pawel Wiecek <coven@debian.org>
-Build-Depends: debhelper, libx11-dev
-Standards-Version: 3.6.2
+Priority: optional
+Maintainer: Daniel Baumann <daniel@debian.org>
+Build-Depends: debhelper (>= 5), autotools-dev
+Standards-Version: 3.7.2
 
-Package: giflib3g
-Section: libs
-Architecture: any
-Conflicts: libgif3g, libgif2, libungif3g
-Replaces: libungif3g
-Depends: ${shlibs:Depends}
-Description: shared library for GIF images (runtime lib)
- This is a shared library for working with GIF images.
-
-Package: giflib3g-dev
+Package: giflib-dbg
 Section: libdevel
+Priority: extra
 Architecture: any
-Conflicts: giflib-dev, libungif3g-dev, libgif-dev, libgif3g-dev, libgif2-dev, heimdal-dev
-Replaces: libungif3g-dev, giflib3g
-Provides: giflib-dev
-Depends: libc6-dev, giflib3g (= ${Source-Version})
-Description: shared library for GIF images (development files)
- This package contains header files needed to compile programs that use
- giflib.                
+Depends: giflib-tools (= ${Source-Version}), libgif4 (= ${Source-Version}), libgif-dev (= ${Source-Version})
+Description: library for GIF images (debug)
+ GIFLIB is a package of portable tools and library routines for working with GIF
+ images.
+ .
+ This package contains the debugging symbols.
 
-Package: giflib-bin
+Package: giflib-tools
 Section: utils
 Architecture: any
-Conflicts: libgif3-bin, giflib-bin, libungif-bin
-Replaces: libungif-bin, giflib3g
-Provides: libungif-bin
-Depends: giflib3g (= ${Source-Version}), ${shlibs:Depends}
-Description: programs to convert GIF images
- These are some programs that use giflib to convert images.
+Depends: ${shlibs:Depends}
+Conflicts: giflib-bin, libungif-bin
+Replaces: giflib-bin, libungif-bin
+Description: library for GIF images (utilities)
+ GIFLIB is a package of portable tools and library routines for working with GIF
+ images.
+ .
+ This package contains additional utilities.
+
+Package: libgif4
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}
+Conflicts: giflib3g, libungif4g
+Replaces: giflib3g, libungif4g
+Description: library for GIF images (library)
+ GIFLIB is a package of portable tools and library routines for working with GIF
+ images.
+ .
+ This package contains the library.
+
+Package: libgif-dev
+Section: libdevel
+Architecture: any
+Depends: libgif4 (= ${Source-Version})
+Conflicts: giflib3g-dev, libungif4-dev
+Replaces: giflib3g-dev, libungif4-dev
+Description: library for GIF images (development)
+ GIFLIB is a package of portable tools and library routines for working with GIF
+ images.
+ .
+ This package contains the development files.

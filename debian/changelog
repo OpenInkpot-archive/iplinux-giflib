@@ -1,3 +1,18 @@
+giflib (4.1.4-1) unstable; urgency=low
+
+  * Took over package from Pawel.
+  * New upstream release (Closes: #395388):
+    - This is giflib 4.x, replacing giflib 3.x. No package in the archive has to
+      be transitioned. After etch, giflib will replace libungif (all alleged patents
+      are expired all over the world).
+    - doesn't contain gif2x11 (Closes: #328665)
+    - isn't affected by CVE-2005-2974 and CVE-2005-3350 (Closes: #395382).
+  * Redone debian directory based on current debhelper templates, additionally:
+    - added watch file.
+    - added debug package.
+
+ -- Daniel Baumann <daniel@debian.org>  Thu,  2 Nov 2006 20:39:00 +0100
+
 giflib (3.0-12) unstable; urgency=low
 
   * Applied patch from Dann Frazier <dannf@hp.com> to fix problems on 64-bit
@@ -109,4 +124,3 @@ giflib (3.0-1) unstable; urgency=low
   * Initial Release.
 
  -- Andreas Jellinghaus <aj@dungeon.inka.de>  Thu, 18 Sep 1997 11:31:18 +0200
-
