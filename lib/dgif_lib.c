@@ -69,7 +69,7 @@ DGifOpenFileName(const char *FileName) {
     GifFileType *GifFile;
 
     if ((FileHandle = open(FileName, O_RDONLY
-#if defined(__MSDOS__) || defined(_OPEN_BINARY)
+#if defined(__MSDOS__) || defined(WINDOWS32) || defined(_OPEN_BINARY)
                            | O_BINARY
 #endif /* __MSDOS__ || _OPEN_BINARY */
          )) == -1) {
@@ -78,8 +78,6 @@ DGifOpenFileName(const char *FileName) {
     }
 
     GifFile = DGifOpenFileHandle(FileHandle);
-    if (GifFile == (GifFileType *)NULL)
-        close(FileHandle);
     return GifFile;
 }
 
@@ -99,6 +97,7 @@ DGifOpenFileHandle(int FileHandle) {
     GifFile = (GifFileType *)malloc(sizeof(GifFileType));
     if (GifFile == NULL) {
         _GifError = D_GIF_ERR_NOT_ENOUGH_MEM;
+        close(FileHandle);
         return NULL;
     }
 
@@ -107,16 +106,17 @@ DGifOpenFileHandle(int FileHandle) {
     Private = (GifFilePrivateType *)malloc(sizeof(GifFilePrivateType));
     if (Private == NULL) {
         _GifError = D_GIF_ERR_NOT_ENOUGH_MEM;
+        close(FileHandle);
         free((char *)GifFile);
         return NULL;
     }
-#ifdef __MSDOS__
+#if defined(__MSDOS__) || defined(WINDOWS32) || defined(_OPEN_BINARY)
     setmode(FileHandle, O_BINARY);    /* Make sure it is in binary mode. */
 #endif /* __MSDOS__ */
 
     f = fdopen(FileHandle, "rb");    /* Make it into a stream: */
 
-#ifdef __MSDOS__
+#if defined(__MSDOS__) || defined(WINDOWS32)
     setvbuf(f, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE);    /* And inc. stream
                                                           buffer. */
 #endif /* __MSDOS__ */
@@ -440,7 +440,7 @@ DGifGetLine(GifFileType * GifFile,
     if (!LineLen)
         LineLen = GifFile->Image.Width;
 
-#if defined(__MSDOS__) || defined(__GNUC__)
+#if defined(__MSDOS__) || defined(WINDOWS32) || defined(__GNUC__)
     if ((Private->PixelCount -= LineLen) > 0xffff0000UL) {
 #else
     if ((Private->PixelCount -= LineLen) > 0xffff0000) {
@@ -479,7 +479,7 @@ DGifGetPixel(GifFileType * GifFile,
         _GifError = D_GIF_ERR_NOT_READABLE;
         return GIF_ERROR;
     }
-#if defined(__MSDOS__) || defined(__GNUC__)
+#if defined(__MSDOS__) || defined(WINDOWS32) || defined(__GNUC__)
     if (--Private->PixelCount > 0xffff0000UL)
 #else
     if (--Private->PixelCount > 0xffff0000)
@@ -748,6 +748,10 @@ DGifDecompressLine(GifFileType * GifFile,
     ClearCode = Private->ClearCode;
     LastCode = Private->LastCode;
 
+    if (StackPtr > LZ_MAX_CODE) {
+        return GIF_ERROR;
+    }
+
     if (StackPtr != 0) {
         /* Let pop the stack off before continueing to read the gif file: */
         while (StackPtr != 0 && i < LineLen)
@@ -865,8 +869,12 @@ DGifGetPrefixChar(GifPrefixType *Prefix,
 
     int i = 0;
 
-    while (Code > ClearCode && i++ <= LZ_MAX_CODE)
+    while (Code > ClearCode && i++ <= LZ_MAX_CODE) {
+        if (Code > LZ_MAX_CODE) {
+            return NO_SUCH_CODE;
+        }
         Code = Prefix[Code];
+    }
     return Code;
 }
 

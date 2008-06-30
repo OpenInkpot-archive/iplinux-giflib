@@ -21,6 +21,6 @@ libgif_la_SOURCES = dev2gif.c   \
                     quantize.c  \
 					gif_lib_private.h
 
-libgif_la_LDFLAGS = -version-info 5:4:1
+libgif_la_LDFLAGS = -version-info 5:6:1
 libgif_la_LIBADD = @DEVS@
-AM_CFLAGS = @CFLAGS@ $(X_CFLAGS) -Wall
+libgif_CFLAGS = $(X_CFLAGS) $(AM_CFLAGS)
