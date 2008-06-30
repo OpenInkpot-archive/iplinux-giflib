@@ -101,7 +101,7 @@ went wrong, GIF_OK otherwise.  After an error return, the code in the
 gif_err.c module can be used to do something about it.<P>
 
 In addition, a module to parse command line arguments is supplied.
-This module is called getarg.c and its headers are in getarg.h.  See the header
+This module is called getarg.c and its headers are in gagetarg.h.  See the header
 of getarg.c for details on its usage.<P>
 
 <H1>Decoding (dgif_lib.c)</H1>
@@ -420,6 +420,34 @@ more than one block are not supported.<P>
 Returns GIF_ERROR if something went wrong, GIF_OK otherwise.<P>
 
 <pre><code>
+int EGifPutExtensionHeader(
+        GifFileType *GifFile,
+        int GifExtCode)
+</code></pre>
+
+Dumps the given extension block header to the GIF file. This must be
+used in combination with EGifPutExtensionBlock to create a valid
+Extension.  Using these two functions it is possible to create an
+extension with any number of sub-blocks.<P>
+
+Returns GIF_ERROR if something went wrong, GIF_OK otherwise.<P>
+
+<pre><code>
+int EGifPutExtensionBlock(
+        GifFileType *GifFile,
+        int GifExtLen,
+        void *GifExtension)
+</code></pre>
+
+Dumps the given extension sub-block into the GIF file. Extension 
+sub-blocks are limited to 255 bytes in length, but extensions which
+allow multiple sub-blocks are not limited in their total length.
+Extension blocks created this way must be terminated with a 0 length
+sub-block.<P>
+
+Returns GIF_ERROR if something went wrong, GIF_OK otherwise.<P>
+
+<pre><code>
 int EGifPutCode(
         GifFileType *GifFile,
         int *GifCodeSize,
@@ -617,7 +645,7 @@ all parameters, parse the command line, and update the parameters.<P>
 The CtrlStr defines what types of variables should follow. Look at the
 beginning of getarg.c for exact usage.<P>
 
-Returns 0 if successful, error number (as defined by getarg.h) otherwise.<P>
+Returns 0 if successful, error number (as defined by gagetarg.h) otherwise.<P>
 
 <pre><code>
 void GAPrintErrMsg(int Error)

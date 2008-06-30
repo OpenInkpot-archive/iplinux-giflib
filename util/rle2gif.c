@@ -27,7 +27,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include "gif_lib.h"
-#include "getarg.h"
+#include "gagetarg.h"
 
 #include "rle.h"			   /* The rle tool kit header files. */
 

@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
-#include "getarg.h"
+#include "gagetarg.h"
 #include "gif_lib.h"
 
 #define PROGRAM_NAME	"gifspnge"

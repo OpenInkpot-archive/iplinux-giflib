@@ -49,7 +49,7 @@ lib/dev2gif.c
 lib/dgif_lib.c
 lib/egif_lib.c
 lib/getarg.c
-lib/getarg.h
+lib/gagetarg.h
 lib/gif_err.c
 lib/gif_font.c
 lib/gif_hash.c

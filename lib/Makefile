@@ -63,7 +63,7 @@ DEVS = -D__X11__
 CC = gcc
 #
 #CFLAGS = -fno-builtin -O -c -W -Wreturn-type -Wcomment
-CFLAGS = -fno-builtin -g -c -W -Wreturn-type -Wcomment
+CFLAGS = -fno-builtin -g -c -W -Wreturn-type -Wcomment -Wall -O2 -D_REENTRANT -fPIC -DPIC
 
 
 OBJS = dev2gif.o egif_lib.o dgif_lib.o gifalloc.o gif_font.o gif_hash.o \
@@ -84,7 +84,8 @@ libgif.a: $(OBJS)
 
 $(SHLIB): $(OBJS)
 	rm -f libgif.so.$(V)
-	gcc -shared -o $(SHLIB) $(OBJS)
+	gcc -shared -Wl,-soname -Wl,libgif.so.3 -o $(SHLIB) $(OBJS) \
+		-L/usr/X11R6/lib -lc -lX11 
 
 dev2gif.o: gif_lib.h
 egif_lib.o: gif_lib.h gif_hash.h
@@ -95,10 +96,10 @@ gifalloc.o: gif_lib.h
 gif_font.o: gif_lib.h
 quantize.o: gif_lib.h
 qprintf.o: gif_lib.h
-getarg.o: getarg.h
+getarg.o: gagetarg.h
 
 install-lib: libgif.a
-	cp libgif.a libgif.so.$(V) $(LIBDIR)
+	cp libgif.a libgif.so.$(V) $(DESTDIR)$(LIBDIR)
 
 uninstall-lib: shared static
 	rm -f $(LIBDIR)/libgif.a $(LIBDIR)/$(SHLIB)

@@ -32,7 +32,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "gif_lib.h"
-#include "getarg.h"
+#include "gagetarg.h"
 
 #define PROGRAM_NAME	"GifClrMp"
 
@@ -237,19 +237,26 @@ void main(int argc, char **argv)
 		}
 		break;
 	    case EXTENSION_RECORD_TYPE:
-		/* Skip any extension blocks in file: */
+		/* Copy the extension header */
 		if (DGifGetExtension(GifFileIn, &ExtCode, &Extension) == GIF_ERROR)
 		    QuitGifError(GifFileIn, GifFileOut);
 		if (HasGIFOutput)
-		    if (EGifPutExtension(GifFileOut, ExtCode, Extension[0],
-							Extension) == GIF_ERROR)
+		    if (EGifPutExtensionHeader(GifFileOut, ExtCode) == GIF_ERROR)
 			QuitGifError(GifFileIn, GifFileOut);
 
-		/* No support to more than one extension blocks, so discard: */
+		/* Copy the extension data blocks */
 		while (Extension != NULL) {
+		    if (HasGIFOutput)
+			if (EGifPutExtensionBlock(GifFileOut, Extension[0],
+			    Extension+1) == GIF_ERROR)
+				QuitGifError(GifFileIn, GifFileOut);
 		    if (DGifGetExtensionNext(GifFileIn, &Extension) == GIF_ERROR)
 			QuitGifError(GifFileIn, GifFileOut);
 		}
+		/* Close the extension with a 0 length data block */
+		if (HasGIFOutput)
+		    if (EGifPutExtensionBlock(GifFileOut, 0, NULL) == GIF_ERROR)
+			    QuitGifError(GifFileIn, GifFileOut);
 		break;
 	    case TERMINATE_RECORD_TYPE:
 		break;

@@ -403,11 +403,35 @@ int EGifPutPixel(GifFileType *GifFile, GifPixelType Pixel)
 
 /******************************************************************************
 * Put a comment into GIF file using the GIF89 comment extension block.        *
+*                                                                             *
+* The original version of this function did no bounds checking to break       *
+* comments longer than 255 characters into multiple blocks.  The Gif89        *
+* spec does not limit comments to 255 characters.                             *
 ******************************************************************************/
 int EGifPutComment(GifFileType *GifFile, char *Comment)
 {
-    return EGifPutExtension(GifFile, COMMENT_EXT_FUNC_CODE, strlen(Comment),
+    int length;
+    int cnt;
+    int partlen;
+
+    length = strlen(Comment);
+
+    if (length < 255) {
+        return EGifPutExtension(GifFile, COMMENT_EXT_FUNC_CODE, length,
 								Comment);
+    } else {
+        if (EGifPutExtensionHeader(GifFile, COMMENT_EXT_FUNC_CODE) == GIF_ERROR)
+		return GIF_ERROR;
+	for (cnt = 0; cnt < length; cnt += 255) {
+		partlen = length - cnt;
+		if (partlen > 255)
+			partlen = 255;
+		if (EGifPutExtensionBlock(GifFile, partlen, Comment + cnt)
+		    ==GIF_ERROR)
+			return GIF_ERROR;
+	}
+	return EGifPutExtensionBlock(GifFile, 0, NULL);
+    }
 }
 
 /******************************************************************************
@@ -440,6 +464,58 @@ int EGifPutExtension(GifFileType *GifFile, int ExtCode, int ExtLen,
 
     return GIF_OK;
 }
+
+/******************************************************************************
+*   Put an extension header (see GIF manual) into gif file.		      *
+*   This function, along with EGifPutExtensionBlock, allows 		      *
+*   the construction of multiblock extensions.				      *
+******************************************************************************/
+int EGifPutExtensionHeader(GifFileType *GifFile, int ExtCode)
+{
+    GifByteType Buf[2];
+    GifFilePrivateType *Private = (GifFilePrivateType *) GifFile->Private;
+
+    if (!IS_WRITEABLE(Private)) {
+	/* This file was NOT open for writing: */
+	_GifError = E_GIF_ERR_NOT_WRITEABLE;
+	return GIF_ERROR;
+    }
+
+    if (ExtCode == 0)
+	return GIF_ERROR;
+    else
+    {
+	Buf[0] = '!';
+	Buf[1] = ExtCode;
+	fwrite(Buf, 1, 2, Private->File);
+    }
+
+    return GIF_OK;
+}
+
+/******************************************************************************
+*   Put an extension sub-block (see GIF manual) into gif file.		      *
+******************************************************************************/
+int EGifPutExtensionBlock(GifFileType *GifFile, int ExtLen, VoidPtr Extension)
+{
+    GifByteType Buf;
+    GifFilePrivateType *Private = (GifFilePrivateType *) GifFile->Private;
+
+    if (!IS_WRITEABLE(Private)) {
+	/* This file was NOT open for writing: */
+	_GifError = E_GIF_ERR_NOT_WRITEABLE;
+	return GIF_ERROR;
+    }
+    
+    Buf = ExtLen;
+    fwrite(&Buf, 1, 1, Private->File);
+    if (ExtLen != 0) {
+	fwrite(Extension, 1, ExtLen, Private->File);
+    }
+
+    return GIF_OK;
+}
+
 
 /******************************************************************************
 *   Put the image code in compressed form. This routine can be called if the  *

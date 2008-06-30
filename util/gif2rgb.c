@@ -28,7 +28,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include "gif_lib.h"
-#include "getarg.h"
+#include "gagetarg.h"
 
 #define PROGRAM_NAME	"Gif2RGB"
 

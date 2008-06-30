@@ -15,11 +15,11 @@
 #ifdef __MSDOS__
 #include <dos.h>
 #include <alloc.h>
-#include <stdlib.h>
 #include <graphics.h>
 #endif /* __MSDOS__ */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "gif_lib.h"
 
 #define PROGRAM_NAME	"GIF_LIBRARY"

@@ -63,5 +63,5 @@ qprintf.obj: gif_lib.h
 
 gif_err.obj: gif_lib.h
 
-getarg.obj: getarg.h
+getarg.obj: gagetarg.h
 

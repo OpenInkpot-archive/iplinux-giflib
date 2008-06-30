@@ -32,7 +32,7 @@ MDL=l
 
 # Where all the include files are:
 INC = ..\lib
-GIF_INC = $(INC)\gif_lib.h $(INC)\getarg.h
+GIF_INC = $(INC)\gif_lib.h $(INC)\gagetarg.h
 
 # And libararies:
 GIF_LIB = ..\lib\gif_lib$(MDL).lib

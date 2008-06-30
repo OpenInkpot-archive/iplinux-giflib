@@ -1,0 +1,5 @@
+usr/lib/libungif.so
+usr/lib/libungif.a
+usr/lib/libgif.so
+usr/lib/libgif.a
+usr/include/*

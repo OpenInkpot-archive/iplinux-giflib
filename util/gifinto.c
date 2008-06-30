@@ -25,7 +25,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "gif_lib.h"
-#include "getarg.h"
+#include "gagetarg.h"
 
 #define PROGRAM_NAME	"GifInto"
 
@@ -76,7 +76,8 @@ void main(int argc, char **argv)
     if ((Error = GAGetArgs(argc, argv, CtrlStr, &GifQuietPrint,
 		&MinSizeFlag, &MinFileSize, &HelpFlag,
 		&NumFiles, &FileName)) != FALSE ||
-		(NumFiles > 1 && !HelpFlag)) {
+		(NumFiles > 1 && !HelpFlag) ||
+		(*FileName == NULL && !HelpFlag)) {
 	if (Error)
 	    GAPrintErrMsg(Error);
 	else if (NumFiles != 1)
