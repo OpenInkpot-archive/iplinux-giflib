@@ -1,5 +1,5 @@
-This package was first debianized by Andreas Jellinghaus <aj@dungeon.inka.de> on
-Thu, 18 Sep 1997 11:31:18 +0200.
+This package was debianized by Daniel Baumann <daniel@debian.org> on
+Thu,  2 Nov 2006 20:39:00 +0100.
 
 It was downloaded from <http://libungif.sourceforge.net/>.
 
@@ -27,3 +27,6 @@ License:
 	CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 	TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+The Debian packaging is (C) 2006-2007, Daniel Baumann <daniel@debian.org> and
+is licensed under the GPL, see `/usr/share/common-licenses/GPL'.

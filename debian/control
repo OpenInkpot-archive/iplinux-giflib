@@ -9,45 +9,53 @@ Package: giflib-dbg
 Section: libdevel
 Priority: extra
 Architecture: any
-Depends: giflib-tools (= ${Source-Version}), libgif4 (= ${Source-Version}), libgif-dev (= ${Source-Version})
+Depends: giflib-tools (= ${binary:Version}), libgif4 (= ${binary:Version}), libgif-dev (= ${binary:Version})
 Description: library for GIF images (debug)
  GIFLIB is a package of portable tools and library routines for working with GIF
  images.
+ .
+  Homepage: <http://libungif.sourceforge.net/>
  .
  This package contains the debugging symbols.
 
 Package: giflib-tools
 Section: utils
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: giflib-bin, libungif-bin
 Replaces: giflib-bin, libungif-bin
 Description: library for GIF images (utilities)
  GIFLIB is a package of portable tools and library routines for working with GIF
  images.
  .
+  Homepage: <http://libungif.sourceforge.net/>
+ .
  This package contains additional utilities.
 
 Package: libgif4
 Section: libs
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: giflib3g, libungif4g
 Replaces: giflib3g, libungif4g
 Description: library for GIF images (library)
  GIFLIB is a package of portable tools and library routines for working with GIF
  images.
  .
+  Homepage: <http://libungif.sourceforge.net/>
+ .
  This package contains the library.
 
 Package: libgif-dev
 Section: libdevel
 Architecture: any
-Depends: libgif4 (= ${Source-Version})
+Depends: libgif4 (= ${binary:Version})
 Conflicts: giflib3g-dev, libungif4-dev
 Replaces: giflib3g-dev, libungif4-dev
 Description: library for GIF images (development)
  GIFLIB is a package of portable tools and library routines for working with GIF
  images.
+ .
+  Homepage: <http://libungif.sourceforge.net/>
  .
  This package contains the development files.

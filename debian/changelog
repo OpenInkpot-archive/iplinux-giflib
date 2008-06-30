@@ -1,3 +1,9 @@
+giflib (4.1.4-2) unstable; urgency=low
+
+  * Minor cleanups.
+
+ -- Daniel Baumann <daniel@debian.org>  Fri, 19 Jan 2007 14:14:00 +0100
+
 giflib (4.1.4-1) unstable; urgency=low
 
   * Took over package from Pawel.
