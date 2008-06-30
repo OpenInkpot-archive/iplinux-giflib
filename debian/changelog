@@ -1,3 +1,10 @@
+giflib (4.1.6-4) unstable; urgency=high
+
+  * Adding patch from libungif to fix CVE-2005-2974 and CVE-2005-3350.
+  * Updating upstream homepage (Closes: #469561).
+
+ -- Daniel Baumann <daniel@debian.org>  Fri,  7 Mar 2008 14:40:00 +0100
+
 giflib (4.1.6-3) unstable; urgency=high
 
   * Adding transitional packages to kick libungif out of the archive by force.

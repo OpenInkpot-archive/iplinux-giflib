@@ -2,9 +2,9 @@ Source: giflib
 Section: libs
 Priority: optional
 Maintainer: Daniel Baumann <daniel@debian.org>
-Build-Depends: debhelper (>= 5), autotools-dev
+Build-Depends: debhelper (>= 5), dpatch, autotools-dev
 Standards-Version: 3.7.3
-Homepage: http://libungif.sourceforge.net/
+Homepage: http://giflib.sourceforge.net/
 
 Package: giflib-dbg
 Section: libdevel
