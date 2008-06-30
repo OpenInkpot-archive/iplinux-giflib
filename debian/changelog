@@ -1,3 +1,10 @@
+giflib (4.1.6-3) unstable; urgency=high
+
+  * Adding transitional packages to kick libungif out of the archive by force.
+  * Removing watch file (Closes: #453592).
+
+ -- Daniel Baumann <daniel@debian.org>  Wed,  6 Feb 2008 23:22:00 +0100
+
 giflib (4.1.6-2) unstable; urgency=low
 
   * Adding legacy links for libungif4g/libungif4-dev.
