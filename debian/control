@@ -55,8 +55,6 @@ Description: library for GIF images (development)
  .
  This package contains the development files.
 
-# Transitional packages
-
 Package: libungif-bin
 Section: utils
 Architecture: all
@@ -81,7 +79,7 @@ Description: library for GIF images (transitional package)
 
 Package: libungif4-dev
 Section: libdevel
-Architecture: any
+Architecture: all
 Depends: libgif-dev (>= ${source:Version})
 Description: library for GIF images (transitional package)
  Package to ease upgrading from older libungif4-dev packages to
