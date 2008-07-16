@@ -3,7 +3,7 @@ Section: libs
 Priority: optional
 Maintainer: Daniel Baumann <daniel@debian.org>
 Build-Depends: debhelper (>= 7), dpatch, autotools-dev
-Standards-Version: 3.7.3
+Standards-Version: 3.8.0
 Homepage: http://giflib.sourceforge.net/
 
 Package: giflib-dbg
