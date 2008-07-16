@@ -52,15 +52,6 @@ install: build
 	cp -a doc/*.txt debian/giflib-tools/usr/share/doc/giflib-tools/
 	cp -a doc/*.html debian/giflib-tools/usr/share/doc/giflib-tools/html
 
-	mkdir -p debian/libgif4/usr/lib
-	ln -s libgif.so.4.1.6 debian/libgif4/usr/lib/libungif.so.4
-	ln -s libgif.so.4.1.6 debian/libgif4/usr/lib/libungif.so.4.1.6
-
-	mkdir -p debian/libgif-dev/usr/lib
-	ln -s libgif.a debian/libgif-dev/usr/lib/libungif.a
-	ln -s libgif.la debian/libgif-dev/usr/lib/libungif.la
-	ln -s libgif.so.4.1.6 debian/libgif-dev/usr/lib/libungif.so
-
 binary: binary-arch binary-indep
 
 binary-arch: build install
