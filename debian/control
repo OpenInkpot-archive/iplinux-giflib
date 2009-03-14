@@ -1,15 +1,17 @@
 Source: giflib
-Section: libs
+Section: gui
 Priority: optional
-Maintainer: Daniel Baumann <daniel@debian.org>
+Maintainer: Alexander Kerner <lunohod@openinkpot.org>
 Build-Depends: debhelper (>= 7), dpatch, autotools-dev
+XCS-Cross-Host-Build-Depends: debhelper (>= 7), dpatch, autotools-dev
 Standards-Version: 3.8.0
+Format: 3.0 (native)
 Homepage: http://giflib.sourceforge.net/
 Vcs-Browser: http://git.debian.net/?p=debian/giflib.git
 Vcs-Git: git://git.debian.net/git/debian/giflib.git
 
 Package: giflib-dbg
-Section: libdevel
+Section: debug
 Priority: extra
 Architecture: any
 Depends: giflib-tools (= ${binary:Version}), libgif4 (= ${binary:Version}), libgif-dev (= ${binary:Version})
@@ -20,7 +22,7 @@ Description: library for GIF images (debug)
  This package contains the debugging symbols.
 
 Package: giflib-tools
-Section: utils
+Section: gui
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libungif-bin (<< 4.1.6)
@@ -32,7 +34,7 @@ Description: library for GIF images (utilities)
  This package contains additional utilities.
 
 Package: libgif4
-Section: libs
+Section: gui
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libungif4g (<< 4.1.6)
@@ -56,7 +58,7 @@ Description: library for GIF images (development)
  This package contains the development files.
 
 Package: libungif-bin
-Section: utils
+Section: gui
 Architecture: all
 Depends: giflib-tools (>= ${source:Version})
 Description: library for GIF images (transitional package)
@@ -67,7 +69,7 @@ Description: library for GIF images (transitional package)
  been installed.
 
 Package: libungif4g
-Section: libs
+Section: gui
 Architecture: all
 Depends: libgif4 (>= ${source:Version})
 Description: library for GIF images (transitional package)

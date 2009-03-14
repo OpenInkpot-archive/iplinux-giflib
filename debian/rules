@@ -31,7 +31,7 @@ ifneq "$(wildcard /usr/share/misc/config.guess)" ""
 	cp -f /usr/share/misc/config.guess config.guess
 endif
 
-	CFLAGS="$(CFLAGS)" LDFLAGS="-Wl,-z,defs" ./configure $(CROSS) --prefix=/usr --mandir=\$${prefix}/share/man --disable-x11
+	CFLAGS="$(CFLAGS)" LDFLAGS="-Wl,-z,defs" ./configure $(CROSS) --prefix=/usr --mandir=\$${prefix}/share/man --disable-x11 --host=$(DEB_HOST_GNU_TYPE)
 
 build: build-stamp
 build-stamp: config.status
@@ -49,17 +49,17 @@ install: build
 
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
 
-	mkdir -p debian/giflib-tools/usr/share/doc/giflib-tools/html
-	cp -a doc/*.txt debian/giflib-tools/usr/share/doc/giflib-tools/
-	cp -a doc/*.html debian/giflib-tools/usr/share/doc/giflib-tools/html
+#	mkdir -p debian/giflib-tools/usr/share/doc/giflib-tools/html
+#	cp -a doc/*.txt debian/giflib-tools/usr/share/doc/giflib-tools/
+#	cp -a doc/*.html debian/giflib-tools/usr/share/doc/giflib-tools/html
 
 binary: binary-arch binary-indep
 
 binary-arch: build install
 	dh_testdir -a
 	dh_testroot -a
-	dh_installchangelogs -a ChangeLog
-	dh_installdocs -a
+#	dh_installchangelogs -a ChangeLog
+#	dh_installdocs -a
 	dh_install -a --fail-missing --sourcedir=debian/tmp
 	dh_link -a
 	dh_strip -a --dbg-package=giflib-dbg
@@ -75,8 +75,8 @@ binary-arch: build install
 binary-indep: install
 	dh_testdir -i
 	dh_testroot -i
-	dh_installchangelogs -i ChangeLog
-	dh_installdocs -i
+#	dh_installchangelogs -i ChangeLog
+#	dh_installdocs -i
 	dh_compress -i
 	dh_fixperms -i
 	dh_installdeb -i
